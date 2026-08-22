@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import './SearchBar.css'
 import BaseInput from '../../atoms/BaseInput/BaseInput.vue'
-<!--Make searchbar v-model compatible, no need to touch the value directly -->
-<!--Format: SearchBar v-model="..." -->
+//Make searchbar v-model compatible, no need to touch the value directly -->
+//Format: SearchBar v-model="..." -->
 
 defineProps<{
   modelValue: string
