@@ -15,6 +15,7 @@ defineProps<{
 <template>
   <article class="weather-card">
     <div class="weather-card__content">
+      <!-- Top: location on left, temperature on right -->
       <div class="weather-card__location">
         <!-- Still hardcoded; may need a prop like isCurrentLocation if this should only show on one card -->
         <p class="weather-card__label">
@@ -29,6 +30,7 @@ defineProps<{
         {{ temperature }}°
       </div>
 
+      <!-- Bottom: condition on left, H/L on right -->
       <div class="weather-card__details">
         <p class="weather-card__condition">
           {{ condition }}
