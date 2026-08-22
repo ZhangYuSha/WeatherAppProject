@@ -23,7 +23,6 @@ const city = String(route.params.city)
 const weather = ref<WeatherData | null>(null)
 const hourlyForecast = ref<HourlyForecastData[]>([])
 const dailyForecast = ref<DailyForecastData[]>([])
-
 const loading = ref(false)
 const errorMessage = ref('')
 const lastUpdated = ref('')
@@ -32,17 +31,36 @@ function goBack() {
   router.back()
 }
 
+/*
+ * Delete the current searched city.
+ */
+function deleteCity() {
+  sessionStorage.removeItem(
+    'searchedWeather'
+  )
+
+  router.push('/')
+}
+
 async function loadWeather() {
   loading.value = true
   errorMessage.value = ''
 
   try {
-    const weatherResult = await getWeather(city)
-    weather.value = weatherResult
+    const weatherResult =
+      await getWeather(city)
 
-    const forecastResult = await getWeatherForecast(city)
-    hourlyForecast.value = forecastResult.hourly
-    dailyForecast.value = forecastResult.daily
+    weather.value =
+      weatherResult
+
+    const forecastResult =
+      await getWeatherForecast(city)
+
+    hourlyForecast.value =
+      forecastResult.hourly
+
+    dailyForecast.value =
+      forecastResult.daily
 
     updateLastUpdated()
   } catch (error) {
@@ -56,10 +74,14 @@ async function loadWeather() {
 }
 
 function updateLastUpdated() {
-  lastUpdated.value = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date())
+  lastUpdated.value =
+    new Intl.DateTimeFormat(
+      'en-US',
+      {
+        hour: 'numeric',
+        minute: '2-digit',
+      }
+    ).format(new Date())
 }
 
 async function refreshWeather() {
@@ -73,6 +95,7 @@ onMounted(() => {
 
 <template>
   <main class="weather-detail-page">
+
     <header class="weather-detail-page__header">
       <button
         class="weather-detail-page__back"
@@ -83,11 +106,17 @@ onMounted(() => {
         &lt;
       </button>
 
-      <h1 v-if="weather" class="weather-detail-page__city">
+      <h1
+        v-if="weather"
+        class="weather-detail-page__city"
+      >
         {{ weather.city }}
       </h1>
 
-      <h1 v-else class="weather-detail-page__city">
+      <h1
+        v-else
+        class="weather-detail-page__city"
+      >
         {{ city }}
       </h1>
 
@@ -95,6 +124,7 @@ onMounted(() => {
         class="weather-detail-page__delete"
         type="button"
         aria-label="Delete city"
+        @click="deleteCity"
       >
         🗑
       </button>
@@ -119,14 +149,18 @@ onMounted(() => {
       v-if="weather && !loading"
       class="weather-detail-page__main"
     >
+
       <p class="weather-detail-page__date">
         {{
-          new Intl.DateTimeFormat('en-US', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          }).format(new Date())
+          new Intl.DateTimeFormat(
+            'en-US',
+            {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            }
+          ).format(new Date())
         }}
       </p>
 
@@ -144,8 +178,12 @@ onMounted(() => {
         {{ weather.condition }}
       </p>
 
-      <div class="weather-detail-page__last-update">
-        <span>Last Update {{ lastUpdated }}</span>
+      <div
+        class="weather-detail-page__last-update"
+      >
+        <span>
+          Last Update {{ lastUpdated }}
+        </span>
 
         <button
           class="weather-detail-page__refresh"
@@ -157,12 +195,18 @@ onMounted(() => {
         </button>
       </div>
 
-      <section class="weather-detail-page__section">
-        <h2 class="weather-detail-page__section-title">
+      <section
+        class="weather-detail-page__section"
+      >
+        <h2
+          class="weather-detail-page__section-title"
+        >
           Hourly Forecast
         </h2>
 
-        <div class="weather-detail-page__hourly">
+        <div
+          class="weather-detail-page__hourly"
+        >
           <article
             v-for="(item, index) in hourlyForecast"
             :key="`${item.time}-${index}`"
@@ -174,23 +218,33 @@ onMounted(() => {
               :alt="item.condition"
             />
 
-            <p class="weather-detail-page__hour-temperature">
+            <p
+              class="weather-detail-page__hour-temperature"
+            >
               {{ item.temperature }}°
             </p>
 
-            <p class="weather-detail-page__hour-time">
+            <p
+              class="weather-detail-page__hour-time"
+            >
               {{ item.time }}
             </p>
           </article>
         </div>
       </section>
 
-      <section class="weather-detail-page__section">
-        <h2 class="weather-detail-page__section-title">
+      <section
+        class="weather-detail-page__section"
+      >
+        <h2
+          class="weather-detail-page__section-title"
+        >
           Weekly Forecast
         </h2>
 
-        <div class="weather-detail-page__weekly">
+        <div
+          class="weather-detail-page__weekly"
+        >
           <article
             v-for="(item, index) in dailyForecast"
             :key="`${item.day}-${index}`"
@@ -202,17 +256,25 @@ onMounted(() => {
               :alt="item.condition"
             />
 
-            <div class="weather-detail-page__day-info">
-              <p class="weather-detail-page__day-name">
+            <div
+              class="weather-detail-page__day-info"
+            >
+              <p
+                class="weather-detail-page__day-name"
+              >
                 {{ item.day }}
               </p>
 
-              <p class="weather-detail-page__day-condition">
+              <p
+                class="weather-detail-page__day-condition"
+              >
                 {{ item.condition }}
               </p>
             </div>
 
-            <p class="weather-detail-page__day-temperature">
+            <p
+              class="weather-detail-page__day-temperature"
+            >
               {{ item.temperature }}°
             </p>
 
@@ -225,6 +287,8 @@ onMounted(() => {
           </article>
         </div>
       </section>
+
     </section>
+
   </main>
 </template>

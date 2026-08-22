@@ -20,28 +20,48 @@ import type {
 
 const router = useRouter()
 
-// Search input
 const searchQuery = ref('')
-
-// Current location weather
-const currentLocationWeather =
-  ref<WeatherData | null>(null)
-
-// Weather from searched location
-const weather =
-  ref<WeatherData[]>([])
-
-// Loading states
+const currentLocationWeather = ref<WeatherData | null>(null)
+const weather = ref<WeatherData[]>([])
 const loading = ref(false)
 const locationLoading = ref(false)
-
-// Error messages
 const errorMessage = ref('')
 const locationErrorMessage = ref('')
 
 /*
- * Called when the user selects
- * a location from SearchBar suggestions.
+ * Save searched weather city.
+ */
+function saveWeatherCity(result: WeatherData) {
+  sessionStorage.setItem(
+    'searchedWeather',
+    JSON.stringify(result)
+  )
+}
+
+/*
+ * Load previously searched city.
+ */
+function loadSavedWeather() {
+  const savedWeather =
+    sessionStorage.getItem('searchedWeather')
+
+  if (!savedWeather) {
+    return
+  }
+
+  try {
+    const saved =
+      JSON.parse(savedWeather) as WeatherData
+
+    weather.value = [saved]
+  } catch {
+    sessionStorage.removeItem('searchedWeather')
+  }
+}
+
+/*
+ * Called when the user selects a location
+ * from the SearchBar suggestions.
  */
 async function selectLocation(
   location: LocationSuggestion
@@ -57,6 +77,8 @@ async function selectLocation(
       )
 
     weather.value = [result]
+
+    saveWeatherCity(result)
 
   } catch (error) {
     errorMessage.value =
@@ -76,7 +98,6 @@ function getCurrentLocation() {
   if (!navigator.geolocation) {
     locationErrorMessage.value =
       'Geolocation is not supported by your browser.'
-
     return
   }
 
@@ -100,7 +121,6 @@ function getCurrentLocation() {
 
         currentLocationWeather.value =
           result
-
       } catch (error) {
         locationErrorMessage.value =
           error instanceof Error
@@ -110,7 +130,6 @@ function getCurrentLocation() {
         locationLoading.value = false
       }
     },
-
     (error) => {
       locationLoading.value = false
 
@@ -125,7 +144,6 @@ function getCurrentLocation() {
           'Unable to retrieve your location.'
       }
     },
-
     {
       enableHighAccuracy: true,
       timeout: 10000,
@@ -134,14 +152,12 @@ function getCurrentLocation() {
   )
 }
 
-/*
- * Open account page.
- */
 function openAccount() {
   router.push('/account')
 }
 
 onMounted(() => {
+  loadSavedWeather()
   getCurrentLocation()
 })
 </script>
@@ -149,10 +165,7 @@ onMounted(() => {
 <template>
   <main class="city-list-page">
 
-    <!-- Header -->
-
     <header class="city-list-page__header">
-
       <h1 class="city-list-page__title">
         Weather
       </h1>
@@ -169,17 +182,12 @@ onMounted(() => {
           class="city-list-page__account-image"
         />
       </button>
-
     </header>
-
-    <!-- Search -->
 
     <SearchBar
       v-model="searchQuery"
       @search="selectLocation"
     />
-
-    <!-- Current location loading -->
 
     <p
       v-if="locationLoading"
@@ -187,8 +195,6 @@ onMounted(() => {
     >
       Loading your location...
     </p>
-
-    <!-- Current location error -->
 
     <p
       v-if="locationErrorMessage"
@@ -198,13 +204,10 @@ onMounted(() => {
       {{ locationErrorMessage }}
     </p>
 
-    <!-- Current location card -->
-
     <section
       v-if="currentLocationWeather"
       class="city-list-page__cards"
     >
-
       <WeatherCard
         :city="currentLocationWeather.city"
         :temperature="currentLocationWeather.temperature"
@@ -214,10 +217,7 @@ onMounted(() => {
         :icon="currentLocationWeather.icon"
         :is-current-location="true"
       />
-
     </section>
-
-    <!-- Search loading -->
 
     <p
       v-if="loading"
@@ -225,8 +225,6 @@ onMounted(() => {
     >
       Loading weather...
     </p>
-
-    <!-- Search error -->
 
     <p
       v-if="errorMessage"
@@ -236,13 +234,10 @@ onMounted(() => {
       {{ errorMessage }}
     </p>
 
-    <!-- Search result cards -->
-
     <section
       v-if="!loading && weather.length"
       class="city-list-page__cards"
     >
-
       <WeatherCard
         v-for="item in weather"
         :key="item.city"
@@ -253,7 +248,6 @@ onMounted(() => {
         :low="item.low"
         :icon="item.icon"
       />
-
     </section>
 
   </main>
