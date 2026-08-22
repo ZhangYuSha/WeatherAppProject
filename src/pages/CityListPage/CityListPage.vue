@@ -27,7 +27,7 @@ const searchQuery = ref('')
 const currentLocationWeather =
   ref<WeatherData | null>(null)
 
-// Weather from selected search result
+// Weather from searched location
 const weather =
   ref<WeatherData[]>([])
 
@@ -40,12 +40,8 @@ const errorMessage = ref('')
 const locationErrorMessage = ref('')
 
 /*
- * Called when the user selects a location
- * from the autocomplete suggestions.
- *
- * The selected location already contains
- * latitude and longitude, so we use those
- * coordinates to get accurate weather.
+ * Called when the user selects
+ * a location from SearchBar suggestions.
  */
 async function selectLocation(
   location: LocationSuggestion
@@ -73,7 +69,8 @@ async function selectLocation(
 }
 
 /*
- * Get weather for the user's current location.
+ * Get weather for the user's
+ * current location.
  */
 function getCurrentLocation() {
   if (!navigator.geolocation) {
@@ -109,7 +106,6 @@ function getCurrentLocation() {
           error instanceof Error
             ? error.message
             : 'Unable to load weather for your location.'
-
       } finally {
         locationLoading.value = false
       }
@@ -139,16 +135,12 @@ function getCurrentLocation() {
 }
 
 /*
- * Navigate to the account page.
+ * Open account page.
  */
 function openAccount() {
   router.push('/account')
 }
 
-/*
- * Automatically request the user's location
- * when the weather page loads.
- */
 onMounted(() => {
   getCurrentLocation()
 })
@@ -206,7 +198,7 @@ onMounted(() => {
       {{ locationErrorMessage }}
     </p>
 
-    <!-- Current location weather card -->
+    <!-- Current location card -->
 
     <section
       v-if="currentLocationWeather"
@@ -244,7 +236,7 @@ onMounted(() => {
       {{ errorMessage }}
     </p>
 
-    <!-- Search result weather cards -->
+    <!-- Search result cards -->
 
     <section
       v-if="!loading && weather.length"
