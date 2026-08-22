@@ -96,7 +96,7 @@ function saveCity() {
 
   if (!alreadySaved) {
     savedCities.push({
-      name: weather.value?.city ?? city,
+      name: city,
       country: '',
       latitude,
       longitude,
@@ -143,7 +143,10 @@ async function loadWeather() {
 
   try {
     if (hasCoordinates) {
-      weather.value = await getWeatherByCoordinates(latitude, longitude)
+      weather.value = await getWeatherByCoordinates(
+        latitude,
+        longitude
+      )
 
       const forecastResult = await getWeatherForecastByCoordinates(
         latitude,
@@ -202,7 +205,7 @@ onMounted(() => {
       </button>
 
       <h1 class="weather-detail-page__city">
-        {{ weather?.city ?? city }}
+        {{ city }}
       </h1>
 
       <button
