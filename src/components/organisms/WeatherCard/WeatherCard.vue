@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import './WeatherCard.css'
 
-defineProps<{
+const props = defineProps<{
   city: string
   temperature: number
   condition: string
@@ -10,13 +11,30 @@ defineProps<{
   icon: string
   isCurrentLocation?: boolean
 }>()
+
+const router = useRouter()
+
+function openWeatherDetails() {
+  router.push({
+    name: 'weather-detail',
+    params: {
+      city: props.city,
+    },
+  })
+}
 </script>
 
 <template>
-  <article class="weather-card">
+  <article
+    class="weather-card"
+    role="button"
+    tabindex="0"
+    @click="openWeatherDetails"
+    @keydown.enter="openWeatherDetails"
+    @keydown.space.prevent="openWeatherDetails"
+  >
 
-    <!-- Top -->
-
+    <!-- Top section -->
     <div class="weather-card__top">
 
       <div class="weather-card__location">
@@ -40,8 +58,7 @@ defineProps<{
 
     </div>
 
-    <!-- Bottom -->
-
+    <!-- Bottom section -->
     <div class="weather-card__bottom">
 
       <p class="weather-card__condition">
