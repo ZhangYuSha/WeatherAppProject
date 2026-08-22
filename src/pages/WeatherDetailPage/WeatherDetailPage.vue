@@ -8,13 +8,14 @@ import {
   getWeather,
   getWeatherByCoordinates,
   getWeatherForecast,
-} from '../../services/weatherApi'
+  getWeatherForecastByCoordinates,
+} from '../../services/WeatherApi'
 
 import type {
   WeatherData,
   HourlyForecastData,
   DailyForecastData,
-} from '../../services/weatherApi'
+} from '../../services/WeatherApi'
 
 interface SavedCity {
   name: string
@@ -141,14 +142,24 @@ async function loadWeather() {
   errorMessage.value = ''
 
   try {
-    weather.value = hasCoordinates
-      ? await getWeatherByCoordinates(latitude, longitude)
-      : await getWeather(city)
+    if (hasCoordinates) {
+      weather.value = await getWeatherByCoordinates(latitude, longitude)
 
-    const forecastResult = await getWeatherForecast(city)
+      const forecastResult = await getWeatherForecastByCoordinates(
+        latitude,
+        longitude
+      )
 
-    hourlyForecast.value = forecastResult.hourly
-    dailyForecast.value = forecastResult.daily
+      hourlyForecast.value = forecastResult.hourly
+      dailyForecast.value = forecastResult.daily
+    } else {
+      weather.value = await getWeather(city)
+
+      const forecastResult = await getWeatherForecast(city)
+
+      hourlyForecast.value = forecastResult.hourly
+      dailyForecast.value = forecastResult.daily
+    }
 
     updateLastUpdated()
   } catch (error) {

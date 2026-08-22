@@ -223,6 +223,90 @@ export async function getWeatherForecast(
   }
 }
 
+export async function getWeatherForecastByCoordinates(
+  latitude: number,
+  longitude: number
+): Promise<{
+  hourly: HourlyForecastData[]
+  daily: DailyForecastData[]
+}> {
+  const url = new URL(FORECAST_URL)
+
+  url.searchParams.append('lat', latitude.toString())
+  url.searchParams.append('lon', longitude.toString())
+  url.searchParams.append('appid', API_KEY)
+  url.searchParams.append('units', 'metric')
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error('Unable to fetch forecast data.')
+  }
+
+  const data: OpenWeatherForecastResponse = await response.json()
+
+  const hourly: HourlyForecastData[] = data.list.map((item) => {
+    const date = new Date(item.dt * 1000)
+
+    return {
+      time: new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(date),
+      temperature: Math.round(item.main.temp),
+      condition: item.weather[0].description,
+      icon: item.weather[0].icon,
+    }
+  })
+
+  const groupedByDay = new Map<string, typeof data.list>()
+
+  data.list.forEach((item) => {
+    const date = new Date(item.dt * 1000)
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+
+    const dayKey = `${year}-${month}-${day}`
+
+    if (!groupedByDay.has(dayKey)) {
+      groupedByDay.set(dayKey, [])
+    }
+
+    groupedByDay.get(dayKey)!.push(item)
+  })
+
+  const daily: DailyForecastData[] = Array.from(
+    groupedByDay.entries()
+  ).map(([dayKey, items]) => {
+    const firstItem = items[0]
+
+    const temperatures = items.map((item) => item.main.temp)
+
+    const high = Math.max(...temperatures)
+    const low = Math.min(...temperatures)
+
+    const date = new Date(`${dayKey}T12:00:00`)
+
+    return {
+      day: new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+      }).format(date),
+      temperature: Math.round(firstItem.main.temp),
+      high: Math.round(high),
+      low: Math.round(low),
+      condition: firstItem.weather[0].description,
+      icon: firstItem.weather[0].icon,
+    }
+  })
+
+  return {
+    hourly,
+    daily,
+  }
+}
+
 export async function searchLocations(
   query: string
 ): Promise<LocationSuggestion[]> {
