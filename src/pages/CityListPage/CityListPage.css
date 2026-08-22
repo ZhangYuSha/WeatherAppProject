@@ -10,9 +10,21 @@
   margin: 0;
 }
 
+.city-list-page__search-button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .city-list-page__cards {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-top: 24px;
+}
+
+.city-list-page__error {
+  margin-top: 16px;
 }
