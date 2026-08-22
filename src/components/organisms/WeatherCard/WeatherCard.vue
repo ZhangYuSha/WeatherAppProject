@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import './WeatherCard.css'
 
+import { getLocationLabel } from '../../../services/WeatherApi'
+
 import mistDayBackground from '../../../assets/Weather/Day/mist.jpg'
 import mistNightBackground from '../../../assets/Weather/Night/mist1.jpeg'
 
@@ -22,6 +24,7 @@ import thunderstormBackground from '../../../assets/Weather/Day/thunderstorm.jpe
 
 const props = defineProps<{
   city: string
+  country: string
   temperature: number
   condition: string
   high: number
@@ -97,10 +100,12 @@ const cardStyle = computed(() => ({
 }))
 
 function openWeatherDetail() {
+  const label = getLocationLabel(props.city, props.country)
+
   router.push({
     name: 'weather-detail',
     params: {
-      city: props.city,
+      city: label,
     },
     query: {
       lat: props.latitude.toString(),

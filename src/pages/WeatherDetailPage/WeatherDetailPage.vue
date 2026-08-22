@@ -27,6 +27,10 @@ interface SavedCity {
 const route = useRoute()
 const router = useRouter()
 
+// The city param already includes country (and state, if any)
+// when navigating from WeatherCard or SearchBar, e.g.
+// "London, United Kingdom" vs "London, Canada" — so it's safe
+// to display directly without further disambiguation.
 const city = String(route.params.city)
 
 // Coordinates come from the query string when navigating from
@@ -97,7 +101,7 @@ function saveCity() {
   if (!alreadySaved) {
     savedCities.push({
       name: city,
-      country: '',
+      country: weather.value?.country ?? '',
       latitude,
       longitude,
     })

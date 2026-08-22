@@ -11,12 +11,13 @@ import profilePicture from '../../assets/Account/profile-user-account.svg'
 
 import {
   getWeatherByCoordinates,
-} from '../../services/weatherApi'
+  getLocationLabel,
+} from '../../services/WeatherApi'
 
 import type {
   WeatherData,
   LocationSuggestion,
-} from '../../services/weatherApi'
+} from '../../services/WeatherApi'
 
 interface SavedCity {
   name: string
@@ -91,12 +92,23 @@ async function loadSavedCities() {
  * only opens the detail page.
  *
  * It does NOT save the city.
+ *
+ * The city param includes the country (and state, if any)
+ * so cities that share a name (e.g. London, UK vs
+ * London, Canada) stay distinguishable everywhere they're
+ * displayed.
  */
 function selectLocation(location: LocationSuggestion) {
+  const label = getLocationLabel(
+    location.name,
+    location.country,
+    location.state
+  )
+
   router.push({
     name: 'weather-detail',
     params: {
-      city: location.name,
+      city: label,
     },
     query: {
       lat: location.lat.toString(),
@@ -216,6 +228,7 @@ onMounted(() => {
     >
       <WeatherCard
         :city="currentLocationWeather.city"
+        :country="currentLocationWeather.country"
         :temperature="currentLocationWeather.temperature"
         :condition="currentLocationWeather.condition"
         :high="currentLocationWeather.high"
@@ -251,6 +264,7 @@ onMounted(() => {
         v-for="item in weather"
         :key="`${item.latitude}-${item.longitude}`"
         :city="item.city"
+        :country="item.country"
         :temperature="item.temperature"
         :condition="item.condition"
         :high="item.high"

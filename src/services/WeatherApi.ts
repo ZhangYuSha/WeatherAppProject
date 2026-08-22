@@ -6,6 +6,7 @@ const GEO_URL = 'https://api.openweathermap.org/geo/1.0/direct'
 
 export interface WeatherData {
   city: string
+  country: string
   temperature: number
   condition: string
   icon: string
@@ -41,6 +42,9 @@ export interface LocationSuggestion {
 
 interface OpenWeatherResponse {
   name: string
+  sys: {
+    country: string
+  }
   coord: {
     lat: number
     lon: number
@@ -76,9 +80,43 @@ interface OpenWeatherForecastResponse {
   }[]
 }
 
+/*
+ * Convert a country code (e.g. "GB") into a readable
+ * country name (e.g. "United Kingdom"). Falls back to
+ * the raw code if the environment can't resolve it.
+ */
+export function getCountryName(countryCode: string): string {
+  try {
+    const displayNames = new Intl.DisplayNames(['en'], {
+      type: 'region',
+    })
+
+    return displayNames.of(countryCode) ?? countryCode
+  } catch {
+    return countryCode
+  }
+}
+
+/*
+ * Build a disambiguated location label, e.g.
+ * "London, United Kingdom" or "London, Ontario, Canada".
+ */
+export function getLocationLabel(
+  name: string,
+  countryCode: string,
+  state?: string
+): string {
+  const parts = [name, state, getCountryName(countryCode)].filter(
+    Boolean
+  )
+
+  return parts.join(', ')
+}
+
 function formatWeatherData(data: OpenWeatherResponse): WeatherData {
   return {
     city: data.name,
+    country: data.sys.country,
     temperature: Math.round(data.main.temp),
     condition: data.weather[0].description,
     icon: data.weather[0].icon,
