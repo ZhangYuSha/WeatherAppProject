@@ -27,6 +27,8 @@ const props = defineProps<{
   high: number
   low: number
   icon: string
+  latitude: number
+  longitude: number
   isCurrentLocation?: boolean
 }>()
 
@@ -99,6 +101,10 @@ function openWeatherDetail() {
     name: 'weather-detail',
     params: {
       city: props.city,
+    },
+    query: {
+      lat: props.latitude.toString(),
+      lon: props.longitude.toString(),
     },
   })
 }

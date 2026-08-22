@@ -10,24 +10,27 @@ import WeatherCard from '../../components/organisms/WeatherCard/WeatherCard.vue'
 import profilePicture from '../../assets/Account/profile-user-account.svg'
 
 import {
-  getWeather,
   getWeatherByCoordinates,
-} from '../../services/WeatherApi'
+} from '../../services/weatherApi'
 
 import type {
   WeatherData,
   LocationSuggestion,
-} from '../../services/WeatherApi'
+} from '../../services/weatherApi'
+
+interface SavedCity {
+  name: string
+  country: string
+  latitude: number
+  longitude: number
+}
 
 const router = useRouter()
 
 const searchQuery = ref('')
 
-const currentLocationWeather =
-  ref<WeatherData | null>(null)
-
-const weather =
-  ref<WeatherData[]>([])
+const currentLocationWeather = ref<WeatherData | null>(null)
+const weather = ref<WeatherData[]>([])
 
 const loading = ref(false)
 const locationLoading = ref(false)
@@ -35,9 +38,8 @@ const locationLoading = ref(false)
 const errorMessage = ref('')
 const locationErrorMessage = ref('')
 
-function getSavedCities(): string[] {
-  const saved =
-    localStorage.getItem('savedCities')
+function getSavedCities(): SavedCity[] {
+  const saved = localStorage.getItem('savedCities')
 
   if (!saved) {
     return []
@@ -51,8 +53,7 @@ function getSavedCities(): string[] {
 }
 
 async function loadSavedCities() {
-  const savedCities =
-    getSavedCities()
+  const savedCities = getSavedCities()
 
   if (savedCities.length === 0) {
     weather.value = []
@@ -63,20 +64,18 @@ async function loadSavedCities() {
   errorMessage.value = ''
 
   try {
-    const results: WeatherData[] = []
+    const results = await Promise.all(
+      savedCities.map((saved) =>
+        getWeatherByCoordinates(
+          saved.latitude,
+          saved.longitude
+        ).catch(() => null)
+      )
+    )
 
-    for (const city of savedCities) {
-      try {
-        const result =
-          await getWeather(city)
-
-        results.push(result)
-      } catch {
-        // Ignore cities that fail to load
-      }
-    }
-
-    weather.value = results
+    weather.value = results.filter(
+      (result): result is WeatherData => result !== null
+    )
   } catch (error) {
     errorMessage.value =
       error instanceof Error
@@ -93,13 +92,15 @@ async function loadSavedCities() {
  *
  * It does NOT save the city.
  */
-function selectLocation(
-  location: LocationSuggestion
-) {
+function selectLocation(location: LocationSuggestion) {
   router.push({
     name: 'weather-detail',
     params: {
       city: location.name,
+    },
+    query: {
+      lat: location.lat.toString(),
+      lon: location.lon.toString(),
     },
   })
 }
@@ -118,20 +119,15 @@ function getCurrentLocation() {
   navigator.geolocation.getCurrentPosition(
     async (position) => {
       try {
-        const latitude =
-          position.coords.latitude
+        const latitude = position.coords.latitude
+        const longitude = position.coords.longitude
 
-        const longitude =
-          position.coords.longitude
+        const result = await getWeatherByCoordinates(
+          latitude,
+          longitude
+        )
 
-        const result =
-          await getWeatherByCoordinates(
-            latitude,
-            longitude
-          )
-
-        currentLocationWeather.value =
-          result
+        currentLocationWeather.value = result
       } catch (error) {
         locationErrorMessage.value =
           error instanceof Error
@@ -145,10 +141,7 @@ function getCurrentLocation() {
     (error) => {
       locationLoading.value = false
 
-      if (
-        error.code ===
-        error.PERMISSION_DENIED
-      ) {
+      if (error.code === error.PERMISSION_DENIED) {
         locationErrorMessage.value =
           'Location permission was denied.'
       } else {
@@ -228,6 +221,8 @@ onMounted(() => {
         :high="currentLocationWeather.high"
         :low="currentLocationWeather.low"
         :icon="currentLocationWeather.icon"
+        :latitude="currentLocationWeather.latitude"
+        :longitude="currentLocationWeather.longitude"
         :is-current-location="true"
       />
     </section>
@@ -254,13 +249,15 @@ onMounted(() => {
     >
       <WeatherCard
         v-for="item in weather"
-        :key="item.city"
+        :key="`${item.latitude}-${item.longitude}`"
         :city="item.city"
         :temperature="item.temperature"
         :condition="item.condition"
         :high="item.high"
         :low="item.low"
         :icon="item.icon"
+        :latitude="item.latitude"
+        :longitude="item.longitude"
       />
     </section>
   </main>

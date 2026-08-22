@@ -11,6 +11,8 @@ export interface WeatherData {
   icon: string
   high: number
   low: number
+  latitude: number
+  longitude: number
 }
 
 export interface HourlyForecastData {
@@ -39,6 +41,10 @@ export interface LocationSuggestion {
 
 interface OpenWeatherResponse {
   name: string
+  coord: {
+    lat: number
+    lon: number
+  }
   main: {
     temp: number
     temp_max: number
@@ -70,9 +76,20 @@ interface OpenWeatherForecastResponse {
   }[]
 }
 
-export async function getWeather(
-  city: string
-): Promise<WeatherData> {
+function formatWeatherData(data: OpenWeatherResponse): WeatherData {
+  return {
+    city: data.name,
+    temperature: Math.round(data.main.temp),
+    condition: data.weather[0].description,
+    icon: data.weather[0].icon,
+    high: Math.round(data.main.temp_max),
+    low: Math.round(data.main.temp_min),
+    latitude: data.coord.lat,
+    longitude: data.coord.lon,
+  }
+}
+
+export async function getWeather(city: string): Promise<WeatherData> {
   const url = new URL(BASE_URL)
 
   url.searchParams.append('q', city)
@@ -91,14 +108,7 @@ export async function getWeather(
 
   const data: OpenWeatherResponse = await response.json()
 
-  return {
-    city: data.name,
-    temperature: Math.round(data.main.temp),
-    condition: data.weather[0].description,
-    icon: data.weather[0].icon,
-    high: Math.round(data.main.temp_max),
-    low: Math.round(data.main.temp_min),
-  }
+  return formatWeatherData(data)
 }
 
 export async function getWeatherByCoordinates(
@@ -124,14 +134,7 @@ export async function getWeatherByCoordinates(
 
   const data: OpenWeatherResponse = await response.json()
 
-  return {
-    city: data.name,
-    temperature: Math.round(data.main.temp),
-    condition: data.weather[0].description,
-    icon: data.weather[0].icon,
-    high: Math.round(data.main.temp_max),
-    low: Math.round(data.main.temp_min),
-  }
+  return formatWeatherData(data)
 }
 
 export async function getWeatherForecast(
@@ -156,26 +159,23 @@ export async function getWeatherForecast(
     throw new Error('Unable to fetch forecast data.')
   }
 
-  const data: OpenWeatherForecastResponse =
-    await response.json()
+  const data: OpenWeatherForecastResponse = await response.json()
 
-  const hourly: HourlyForecastData[] =
-    data.list.map((item) => {
-      const date = new Date(item.dt * 1000)
+  const hourly: HourlyForecastData[] = data.list.map((item) => {
+    const date = new Date(item.dt * 1000)
 
-      return {
-        time: new Intl.DateTimeFormat('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-        }).format(date),
-        temperature: Math.round(item.main.temp),
-        condition: item.weather[0].description,
-        icon: item.weather[0].icon,
-      }
-    })
+    return {
+      time: new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(date),
+      temperature: Math.round(item.main.temp),
+      condition: item.weather[0].description,
+      icon: item.weather[0].icon,
+    }
+  })
 
-  const groupedByDay =
-    new Map<string, typeof data.list>()
+  const groupedByDay = new Map<string, typeof data.list>()
 
   data.list.forEach((item) => {
     const date = new Date(item.dt * 1000)
@@ -193,33 +193,29 @@ export async function getWeatherForecast(
     groupedByDay.get(dayKey)!.push(item)
   })
 
-  const daily: DailyForecastData[] =
-    Array.from(groupedByDay.entries()).map(
-      ([dayKey, items]) => {
-        const firstItem = items[0]
+  const daily: DailyForecastData[] = Array.from(
+    groupedByDay.entries()
+  ).map(([dayKey, items]) => {
+    const firstItem = items[0]
 
-        const temperatures = items.map(
-          (item) => item.main.temp
-        )
+    const temperatures = items.map((item) => item.main.temp)
 
-        const high = Math.max(...temperatures)
-        const low = Math.min(...temperatures)
+    const high = Math.max(...temperatures)
+    const low = Math.min(...temperatures)
 
-        const date = new Date(`${dayKey}T12:00:00`)
+    const date = new Date(`${dayKey}T12:00:00`)
 
-        return {
-          day: new Intl.DateTimeFormat('en-US', {
-            weekday: 'short',
-          }).format(date),
-          temperature: Math.round(firstItem.main.temp),
-          high: Math.round(high),
-          low: Math.round(low),
-          condition:
-            firstItem.weather[0].description,
-          icon: firstItem.weather[0].icon,
-        }
-      }
-    )
+    return {
+      day: new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+      }).format(date),
+      temperature: Math.round(firstItem.main.temp),
+      high: Math.round(high),
+      low: Math.round(low),
+      condition: firstItem.weather[0].description,
+      icon: firstItem.weather[0].icon,
+    }
+  })
 
   return {
     hourly,

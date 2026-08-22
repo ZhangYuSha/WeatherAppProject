@@ -6,40 +6,48 @@ import './WeatherDetailPage.css'
 
 import {
   getWeather,
+  getWeatherByCoordinates,
   getWeatherForecast,
-} from '../../services/WeatherApi'
+} from '../../services/weatherApi'
 
 import type {
   WeatherData,
   HourlyForecastData,
   DailyForecastData,
-} from '../../services/WeatherApi'
+} from '../../services/weatherApi'
+
+interface SavedCity {
+  name: string
+  country: string
+  latitude: number
+  longitude: number
+}
 
 const route = useRoute()
 const router = useRouter()
 
 const city = String(route.params.city)
 
-const weather =
-  ref<WeatherData | null>(null)
+// Coordinates come from the query string when navigating from
+// WeatherCard or SearchBar. If missing (e.g. a bare bookmarked
+// URL), we fall back to name-based lookup below.
+const latitude = Number(route.query.lat)
+const longitude = Number(route.query.lon)
+const hasCoordinates =
+  !Number.isNaN(latitude) && !Number.isNaN(longitude)
 
-const hourlyForecast =
-  ref<HourlyForecastData[]>([])
-
-const dailyForecast =
-  ref<DailyForecastData[]>([])
+const weather = ref<WeatherData | null>(null)
+const hourlyForecast = ref<HourlyForecastData[]>([])
+const dailyForecast = ref<DailyForecastData[]>([])
 
 const loading = ref(false)
-
 const errorMessage = ref('')
-
 const lastUpdated = ref('')
 
 const isSaved = ref(false)
 
-function getSavedCities(): string[] {
-  const saved =
-    localStorage.getItem('savedCities')
+function getSavedCities(): SavedCity[] {
+  const saved = localStorage.getItem('savedCities')
 
   if (!saved) {
     return []
@@ -52,33 +60,46 @@ function getSavedCities(): string[] {
   }
 }
 
-function checkIfSaved() {
-  const savedCities =
-    getSavedCities()
+/*
+ * Two coordinates are treated as the same place if they're
+ * within ~1km of each other, to tolerate tiny float differences
+ * between requests for the same city.
+ */
+function isSameCity(saved: SavedCity): boolean {
+  if (!hasCoordinates) {
+    return false
+  }
 
-  isSaved.value =
-    savedCities.some(
-      savedCity =>
-        savedCity.toLowerCase() ===
-        city.toLowerCase()
-    )
+  return (
+    Math.abs(saved.latitude - latitude) < 0.01 &&
+    Math.abs(saved.longitude - longitude) < 0.01
+  )
+}
+
+function checkIfSaved() {
+  if (!hasCoordinates) {
+    isSaved.value = false
+    return
+  }
+
+  isSaved.value = getSavedCities().some(isSameCity)
 }
 
 function saveCity() {
-  const savedCities =
-    getSavedCities()
+  if (!hasCoordinates) {
+    return
+  }
 
-  const alreadySaved =
-    savedCities.some(
-      savedCity =>
-        savedCity.toLowerCase() ===
-        city.toLowerCase()
-    )
+  const savedCities = getSavedCities()
+  const alreadySaved = savedCities.some(isSameCity)
 
   if (!alreadySaved) {
-    savedCities.push(
-      weather.value?.city ?? city
-    )
+    savedCities.push({
+      name: weather.value?.city ?? city,
+      country: '',
+      latitude,
+      longitude,
+    })
 
     localStorage.setItem(
       'savedCities',
@@ -92,15 +113,14 @@ function saveCity() {
 }
 
 function deleteCity() {
-  const savedCities =
-    getSavedCities()
+  if (!hasCoordinates) {
+    return
+  }
 
-  const updatedCities =
-    savedCities.filter(
-      savedCity =>
-        savedCity.toLowerCase() !==
-        city.toLowerCase()
-    )
+  const savedCities = getSavedCities()
+  const updatedCities = savedCities.filter(
+    (saved) => !isSameCity(saved)
+  )
 
   localStorage.setItem(
     'savedCities',
@@ -121,20 +141,14 @@ async function loadWeather() {
   errorMessage.value = ''
 
   try {
-    const weatherResult =
-      await getWeather(city)
+    weather.value = hasCoordinates
+      ? await getWeatherByCoordinates(latitude, longitude)
+      : await getWeather(city)
 
-    weather.value =
-      weatherResult
+    const forecastResult = await getWeatherForecast(city)
 
-    const forecastResult =
-      await getWeatherForecast(city)
-
-    hourlyForecast.value =
-      forecastResult.hourly
-
-    dailyForecast.value =
-      forecastResult.daily
+    hourlyForecast.value = forecastResult.hourly
+    dailyForecast.value = forecastResult.daily
 
     updateLastUpdated()
   } catch (error) {
@@ -148,14 +162,10 @@ async function loadWeather() {
 }
 
 function updateLastUpdated() {
-  lastUpdated.value =
-    new Intl.DateTimeFormat(
-      'en-US',
-      {
-        hour: 'numeric',
-        minute: '2-digit',
-      }
-    ).format(new Date())
+  lastUpdated.value = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date())
 }
 
 async function refreshWeather() {
@@ -226,15 +236,12 @@ onMounted(() => {
     >
       <p class="weather-detail-page__date">
         {{
-          new Intl.DateTimeFormat(
-            'en-US',
-            {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            }
-          ).format(new Date())
+          new Intl.DateTimeFormat('en-US', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }).format(new Date())
         }}
       </p>
 
@@ -252,9 +259,7 @@ onMounted(() => {
         {{ weather.condition }}
       </p>
 
-      <div
-        class="weather-detail-page__last-update"
-      >
+      <div class="weather-detail-page__last-update">
         <span>
           Last Update {{ lastUpdated }}
         </span>
@@ -269,18 +274,12 @@ onMounted(() => {
         </button>
       </div>
 
-      <section
-        class="weather-detail-page__section"
-      >
-        <h2
-          class="weather-detail-page__section-title"
-        >
+      <section class="weather-detail-page__section">
+        <h2 class="weather-detail-page__section-title">
           Hourly Forecast
         </h2>
 
-        <div
-          class="weather-detail-page__hourly"
-        >
+        <div class="weather-detail-page__hourly">
           <article
             v-for="(item, index) in hourlyForecast"
             :key="`${item.time}-${index}`"
@@ -292,33 +291,23 @@ onMounted(() => {
               :alt="item.condition"
             />
 
-            <p
-              class="weather-detail-page__hour-temperature"
-            >
+            <p class="weather-detail-page__hour-temperature">
               {{ item.temperature }}°
             </p>
 
-            <p
-              class="weather-detail-page__hour-time"
-            >
+            <p class="weather-detail-page__hour-time">
               {{ item.time }}
             </p>
           </article>
         </div>
       </section>
 
-      <section
-        class="weather-detail-page__section"
-      >
-        <h2
-          class="weather-detail-page__section-title"
-        >
+      <section class="weather-detail-page__section">
+        <h2 class="weather-detail-page__section-title">
           Weekly Forecast
         </h2>
 
-        <div
-          class="weather-detail-page__weekly"
-        >
+        <div class="weather-detail-page__weekly">
           <article
             v-for="(item, index) in dailyForecast"
             :key="`${item.day}-${index}`"
@@ -330,25 +319,17 @@ onMounted(() => {
               :alt="item.condition"
             />
 
-            <div
-              class="weather-detail-page__day-info"
-            >
-              <p
-                class="weather-detail-page__day-name"
-              >
+            <div class="weather-detail-page__day-info">
+              <p class="weather-detail-page__day-name">
                 {{ item.day }}
               </p>
 
-              <p
-                class="weather-detail-page__day-condition"
-              >
+              <p class="weather-detail-page__day-condition">
                 {{ item.condition }}
               </p>
             </div>
 
-            <p
-              class="weather-detail-page__day-temperature"
-            >
+            <p class="weather-detail-page__day-temperature">
               {{ item.temperature }}°
             </p>
 
