@@ -274,3 +274,49 @@
 .account-page__phone-input:not([readonly]) {
   color: #222;
 }
+
+.account-page__country {
+  width: 110px;
+  min-width: 110px;
+  height: 50px;
+  padding: 0 8px;
+  border: none;
+  border-right: 1px solid #d5d5d5;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.account-page__country:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.account-page__flag {
+  width: 30px;
+  height: 20px;
+  object-fit: cover;
+  margin: 0 8px;
+  border-radius: 2px;
+}
+
+.account-page__error {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #c0392b;
+}
+
+@media (max-width: 600px) {
+  .account-page__country {
+    width: 90px;
+    min-width: 90px;
+    font-size: 13px;
+  }
+
+  .account-page__flag {
+    width: 28px;
+    height: 19px;
+    margin: 0 6px;
+  }
+}
