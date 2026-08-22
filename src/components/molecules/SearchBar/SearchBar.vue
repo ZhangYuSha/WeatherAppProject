@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-
 import './SearchBar.css'
-
 import BaseInput from '../../atoms/BaseInput/BaseInput.vue'
-
-import {
-  searchLocations,
-} from '../../../services/weatherApi'
-
-import type {
-  LocationSuggestion,
-} from '../../../services/weatherApi'
+import { searchLocations } from '../../../services/weatherApi'
+import type { LocationSuggestion } from '../../../services/weatherApi'
 
 const props = defineProps<{
   modelValue: string
@@ -19,32 +11,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-
-  search: [
-    location: LocationSuggestion
-  ]
+  search: [location: LocationSuggestion]
 }>()
 
-const suggestions =
-  ref<LocationSuggestion[]>([])
+const suggestions = ref<LocationSuggestion[]>([])
+const loading = ref(false)
+const showSuggestions = ref(false)
 
-const loading =
-  ref(false)
+let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
-const showSuggestions =
-  ref(false)
-
-let debounceTimer:
-  ReturnType<typeof setTimeout> | undefined
-
-/*
- * Search for locations after the user
- * stops typing for a short period.
- */
 watch(
   () => props.modelValue,
   (value) => {
-
     clearTimeout(debounceTimer)
 
     const query = value.trim()
@@ -55,43 +33,28 @@ watch(
       return
     }
 
-    debounceTimer = setTimeout(
-      async () => {
+    debounceTimer = setTimeout(async () => {
+      loading.value = true
 
-        loading.value = true
+      try {
+        suggestions.value =
+          await searchLocations(query)
 
-        try {
-
-          suggestions.value =
-            await searchLocations(query)
-
-          showSuggestions.value =
-            suggestions.value.length > 0
-
-        } catch {
-
-          suggestions.value = []
-          showSuggestions.value = false
-
-        } finally {
-
-          loading.value = false
-
-        }
-
-      },
-      300
-    )
+        showSuggestions.value =
+          suggestions.value.length > 0
+      } catch {
+        suggestions.value = []
+        showSuggestions.value = false
+      } finally {
+        loading.value = false
+      }
+    }, 300)
   }
 )
 
-/*
- * User selects a location.
- */
 function selectLocation(
   location: LocationSuggestion
 ) {
-
   const displayName =
     getDisplayName(location)
 
@@ -108,13 +71,9 @@ function selectLocation(
   showSuggestions.value = false
 }
 
-/*
- * Build a readable location name.
- */
 function getDisplayName(
   location: LocationSuggestion
 ): string {
-
   const parts = [
     location.name,
     location.state,
@@ -124,58 +83,36 @@ function getDisplayName(
   return parts.join(', ')
 }
 
-/*
- * Convert country code into
- * readable country name.
- */
 function getCountryName(
   countryCode: string
 ): string {
-
   try {
-
     const displayNames =
-      new Intl.DisplayNames(
-        ['en'],
-        {
-          type: 'region',
-        }
-      )
+      new Intl.DisplayNames(['en'], {
+        type: 'region',
+      })
 
     return (
-      displayNames.of(countryCode)
-      ?? countryCode
+      displayNames.of(countryCode) ??
+      countryCode
     )
-
   } catch {
-
     return countryCode
-
   }
 }
 
-/*
- * Search when Enter is pressed.
- */
 function handleEnter() {
-
-  if (
-    suggestions.value.length > 0
-  ) {
-
+  if (suggestions.value.length > 0) {
     selectLocation(
       suggestions.value[0]
     )
-
   }
 }
 </script>
 
 <template>
   <div class="search-bar">
-
     <div class="search-bar__input-wrapper">
-
       <span
         class="search-bar__icon"
         aria-hidden="true"
@@ -196,26 +133,21 @@ function handleEnter() {
             suggestions.length > 0
         "
       />
-
     </div>
-
-    <!-- Suggestions -->
 
     <div
       v-if="showSuggestions"
       class="search-bar__suggestions"
     >
-
       <button
         v-for="location in suggestions"
-        :key="`${location.latitude}-${location.longitude}`"
+        :key="`${location.name}-${location.country}-${location.lat}-${location.lon}`"
         class="search-bar__suggestion"
         type="button"
         @click="
           selectLocation(location)
         "
       >
-
         <span
           class="search-bar__suggestion-icon"
           aria-hidden="true"
@@ -228,9 +160,7 @@ function handleEnter() {
         >
           {{ getDisplayName(location) }}
         </span>
-
       </button>
-
     </div>
 
     <p
@@ -239,6 +169,5 @@ function handleEnter() {
     >
       Searching locations...
     </p>
-
   </div>
 </template>
