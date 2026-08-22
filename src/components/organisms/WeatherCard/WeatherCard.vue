@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-function openWeatherDetails() {
+function openWeatherDetail() {
   router.push({
     name: 'weather-detail',
     params: {
@@ -27,14 +27,14 @@ function openWeatherDetails() {
 <template>
   <article
     class="weather-card"
-    role="button"
     tabindex="0"
-    @click="openWeatherDetails"
-    @keydown.enter="openWeatherDetails"
-    @keydown.space.prevent="openWeatherDetails"
+    role="button"
+    :aria-label="`View weather details for ${city}`"
+    @click="openWeatherDetail"
+    @keydown.enter="openWeatherDetail"
+    @keydown.space.prevent="openWeatherDetail"
   >
 
-    <!-- Top section -->
     <div class="weather-card__top">
 
       <div class="weather-card__location">
@@ -58,7 +58,6 @@ function openWeatherDetails() {
 
     </div>
 
-    <!-- Bottom section -->
     <div class="weather-card__bottom">
 
       <p class="weather-card__condition">
