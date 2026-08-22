@@ -16,16 +16,31 @@
 }
 
 /* Top section */
+
 .weather-card__top {
   display: flex;
+
   justify-content: space-between;
   align-items: flex-start;
 
   flex: 1;
 }
 
-/* MyLocation */
+/* Location */
+
 .weather-card__location {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  margin: 0;
+}
+
+/* My Location */
+
+.weather-card__label {
+  margin: 0;
+
   font-size: 28px;
   font-weight: 700;
 
@@ -33,8 +48,9 @@
 }
 
 /* Bangsar South */
+
 .weather-card__city {
-  margin-top: 4px;
+  margin: 4px 0 0;
 
   font-size: 20px;
   font-weight: 500;
@@ -42,7 +58,8 @@
   line-height: 1.2;
 }
 
-/* 24° */
+/* Temperature */
+
 .weather-card__temperature {
   font-size: 72px;
   font-weight: 600;
@@ -53,22 +70,28 @@
 }
 
 /* Bottom section */
+
 .weather-card__bottom {
   display: flex;
 
   justify-content: space-between;
-
   align-items: flex-end;
 }
 
 /* Moderate Rain */
+
 .weather-card__condition {
+  margin: 0;
+
   font-size: 20px;
   font-weight: 500;
 }
 
 /* H: 30° L: 25° */
+
 .weather-card__high-low {
+  margin: 0;
+
   font-size: 20px;
   font-weight: 500;
 
