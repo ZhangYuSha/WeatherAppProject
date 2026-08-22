@@ -12,12 +12,12 @@ import profilePicture from '../../assets/Account/profile-user-account.svg'
 import {
   getWeather,
   getWeatherByCoordinates,
-} from '../../services/weatherApi'
+} from '../../services/WeatherApi'
 
 import type {
   WeatherData,
   LocationSuggestion,
-} from '../../services/weatherApi'
+} from '../../services/WeatherApi'
 
 const router = useRouter()
 

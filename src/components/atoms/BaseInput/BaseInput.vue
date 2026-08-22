@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import './BaseInput.css'
 
-defineProps<{
+const props = defineProps<{
   modelValue: string
   placeholder?: string
-  ariaLabel: string
+  ariaLabel?: string
 }>()
 
 const emit = defineEmits<{

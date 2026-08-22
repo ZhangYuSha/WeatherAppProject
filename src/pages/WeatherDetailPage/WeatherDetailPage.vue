@@ -7,13 +7,13 @@ import './WeatherDetailPage.css'
 import {
   getWeather,
   getWeatherForecast,
-} from '../../services/weatherApi'
+} from '../../services/WeatherApi'
 
 import type {
   WeatherData,
   HourlyForecastData,
   DailyForecastData,
-} from '../../services/weatherApi'
+} from '../../services/WeatherApi'
 
 const route = useRoute()
 const router = useRouter()
