@@ -1,0 +1,9 @@
+.base-input {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 16px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+}

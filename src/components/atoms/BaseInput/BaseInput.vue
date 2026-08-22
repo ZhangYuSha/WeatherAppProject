@@ -1,6 +1,7 @@
 <!-- Vue 3 component using the <script setup> syntax -->
 <!-- Implementing a reusable text input that supports v-model binding. -->
 <script setup lang="ts">
+import './BaseInput.css'
 // Only available in <script setup lang="ts">
 defineProps<{
   // Required string prop
@@ -25,6 +26,7 @@ defineEmits<{
   <!-- Listens for native input events -->
   <!-- HTMLInputElement: Needed, Ts not know target concrete -->
   <input
+  class="base-input"
     :value="modelValue"
     :placeholder="placeholder"
     :aria-label="ariaLabel"
