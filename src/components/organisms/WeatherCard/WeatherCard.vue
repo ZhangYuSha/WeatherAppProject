@@ -34,11 +34,8 @@ function openWeatherDetail() {
     @keydown.enter="openWeatherDetail"
     @keydown.space.prevent="openWeatherDetail"
   >
-
     <div class="weather-card__top">
-
       <div class="weather-card__location">
-
         <p
           v-if="isCurrentLocation"
           class="weather-card__label"
@@ -49,17 +46,14 @@ function openWeatherDetail() {
         <h2 class="weather-card__city">
           {{ city }}
         </h2>
-
       </div>
 
       <div class="weather-card__temperature">
         {{ temperature }}°
       </div>
-
     </div>
 
     <div class="weather-card__bottom">
-
       <p class="weather-card__condition">
         {{ condition }}
       </p>
@@ -67,8 +61,6 @@ function openWeatherDetail() {
       <p class="weather-card__high-low">
         H:{{ high }}° L:{{ low }}°
       </p>
-
     </div>
-
   </article>
 </template>
