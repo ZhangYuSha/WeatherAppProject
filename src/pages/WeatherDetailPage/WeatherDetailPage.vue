@@ -20,26 +20,100 @@ const router = useRouter()
 
 const city = String(route.params.city)
 
-const weather = ref<WeatherData | null>(null)
-const hourlyForecast = ref<HourlyForecastData[]>([])
-const dailyForecast = ref<DailyForecastData[]>([])
+const weather =
+  ref<WeatherData | null>(null)
+
+const hourlyForecast =
+  ref<HourlyForecastData[]>([])
+
+const dailyForecast =
+  ref<DailyForecastData[]>([])
+
 const loading = ref(false)
+
 const errorMessage = ref('')
+
 const lastUpdated = ref('')
+
+const isSaved = ref(false)
+
+function getSavedCities(): string[] {
+  const saved =
+    localStorage.getItem('savedCities')
+
+  if (!saved) {
+    return []
+  }
+
+  try {
+    return JSON.parse(saved)
+  } catch {
+    return []
+  }
+}
+
+function checkIfSaved() {
+  const savedCities =
+    getSavedCities()
+
+  isSaved.value =
+    savedCities.some(
+      savedCity =>
+        savedCity.toLowerCase() ===
+        city.toLowerCase()
+    )
+}
+
+function saveCity() {
+  const savedCities =
+    getSavedCities()
+
+  const alreadySaved =
+    savedCities.some(
+      savedCity =>
+        savedCity.toLowerCase() ===
+        city.toLowerCase()
+    )
+
+  if (!alreadySaved) {
+    savedCities.push(
+      weather.value?.city ?? city
+    )
+
+    localStorage.setItem(
+      'savedCities',
+      JSON.stringify(savedCities)
+    )
+  }
+
+  isSaved.value = true
+
+  router.push('/')
+}
+
+function deleteCity() {
+  const savedCities =
+    getSavedCities()
+
+  const updatedCities =
+    savedCities.filter(
+      savedCity =>
+        savedCity.toLowerCase() !==
+        city.toLowerCase()
+    )
+
+  localStorage.setItem(
+    'savedCities',
+    JSON.stringify(updatedCities)
+  )
+
+  isSaved.value = false
+
+  router.push('/')
+}
 
 function goBack() {
   router.back()
-}
-
-/*
- * Delete the current searched city.
- */
-function deleteCity() {
-  sessionStorage.removeItem(
-    'searchedWeather'
-  )
-
-  router.push('/')
 }
 
 async function loadWeather() {
@@ -89,13 +163,13 @@ async function refreshWeather() {
 }
 
 onMounted(() => {
+  checkIfSaved()
   loadWeather()
 })
 </script>
 
 <template>
   <main class="weather-detail-page">
-
     <header class="weather-detail-page__header">
       <button
         class="weather-detail-page__back"
@@ -106,21 +180,22 @@ onMounted(() => {
         &lt;
       </button>
 
-      <h1
-        v-if="weather"
-        class="weather-detail-page__city"
-      >
-        {{ weather.city }}
-      </h1>
-
-      <h1
-        v-else
-        class="weather-detail-page__city"
-      >
-        {{ city }}
+      <h1 class="weather-detail-page__city">
+        {{ weather?.city ?? city }}
       </h1>
 
       <button
+        v-if="!isSaved"
+        class="weather-detail-page__delete"
+        type="button"
+        aria-label="Add city"
+        @click="saveCity"
+      >
+        +
+      </button>
+
+      <button
+        v-else
         class="weather-detail-page__delete"
         type="button"
         aria-label="Delete city"
@@ -149,7 +224,6 @@ onMounted(() => {
       v-if="weather && !loading"
       class="weather-detail-page__main"
     >
-
       <p class="weather-detail-page__date">
         {{
           new Intl.DateTimeFormat(
@@ -287,8 +361,6 @@ onMounted(() => {
           </article>
         </div>
       </section>
-
     </section>
-
   </main>
 </template>

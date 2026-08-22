@@ -4,8 +4,6 @@
   box-sizing: border-box;
 }
 
-/* Header */
-
 .weather-detail-page__header {
   position: relative;
   display: flex;
@@ -39,15 +37,14 @@
   right: 0;
   border: none;
   background: transparent;
-  font-size: 22px;
+  font-size: 24px;
   cursor: pointer;
+  padding: 4px 8px;
 }
 
 .weather-detail-page__delete:hover {
   opacity: 0.6;
 }
-
-/* Loading / Error */
 
 .weather-detail-page__loading {
   text-align: center;
@@ -59,8 +56,6 @@
   text-align: center;
   color: #c62828;
 }
-
-/* Main Weather */
 
 .weather-detail-page__main {
   display: flex;
@@ -115,8 +110,6 @@
   opacity: 0.6;
 }
 
-/* Sections */
-
 .weather-detail-page__section {
   width: 100%;
   max-width: 900px;
@@ -128,8 +121,6 @@
   font-size: 22px;
   font-weight: 700;
 }
-
-/* Hourly Forecast */
 
 .weather-detail-page__hourly {
   display: flex;
@@ -169,8 +160,6 @@
   white-space: nowrap;
 }
 
-/* Weekly Forecast */
-
 .weather-detail-page__weekly {
   display: flex;
   flex-direction: column;
@@ -194,7 +183,7 @@
 .weather-detail-page__day-icon {
   width: 48px;
   height: 48px;
-  grid-row: 1 / 3;
+  grid-row: 1;
   align-self: center;
 }
 
@@ -234,8 +223,6 @@
   font-weight: 400;
   text-align: center;
 }
-
-/* Mobile */
 
 @media (max-width: 600px) {
   .weather-detail-page {
