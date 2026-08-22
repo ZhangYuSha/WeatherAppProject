@@ -2,6 +2,7 @@
 //createWebHistory = sets up how tohe browser's URL/history is managed
 import { createRouter, createWebHistory } from 'vue-router'
 import CityListPage from '../pages/CityListPage/CityListPage.vue'
+import AccountPage from '../pages/AccountPage/AccountPage.vue'
 
 const router = createRouter({
     //Ensure the URL look normal rather than using #, require server configuration
@@ -11,7 +12,13 @@ const router = createRouter({
       path: '/',
       name: 'city-list',
       component: CityListPage,
-    },],
+    },
+  {
+      path: '/account',
+      name: 'account',
+      component: AccountPage,
+    },
+  ],
 })
 
 export default router
