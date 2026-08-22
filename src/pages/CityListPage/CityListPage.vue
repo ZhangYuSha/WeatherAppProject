@@ -10,6 +10,7 @@ import WeatherCard from '../../components/organisms/WeatherCard/WeatherCard.vue'
 import profilePicture from '../../assets/Account/profile-user-account.svg'
 
 import {
+  getWeather,
   getWeatherByCoordinates,
 } from '../../services/weatherApi'
 
@@ -21,83 +22,93 @@ import type {
 const router = useRouter()
 
 const searchQuery = ref('')
-const currentLocationWeather = ref<WeatherData | null>(null)
-const weather = ref<WeatherData[]>([])
+
+const currentLocationWeather =
+  ref<WeatherData | null>(null)
+
+const weather =
+  ref<WeatherData[]>([])
+
 const loading = ref(false)
 const locationLoading = ref(false)
+
 const errorMessage = ref('')
 const locationErrorMessage = ref('')
 
-/*
- * Save searched weather city.
- */
-function saveWeatherCity(result: WeatherData) {
-  sessionStorage.setItem(
-    'searchedWeather',
-    JSON.stringify(result)
-  )
-}
+function getSavedCities(): string[] {
+  const saved =
+    localStorage.getItem('savedCities')
 
-/*
- * Load previously searched city.
- */
-function loadSavedWeather() {
-  const savedWeather =
-    sessionStorage.getItem('searchedWeather')
-
-  if (!savedWeather) {
-    return
+  if (!saved) {
+    return []
   }
 
   try {
-    const saved =
-      JSON.parse(savedWeather) as WeatherData
-
-    weather.value = [saved]
+    return JSON.parse(saved)
   } catch {
-    sessionStorage.removeItem('searchedWeather')
+    return []
   }
 }
 
-/*
- * Called when the user selects a location
- * from the SearchBar suggestions.
- */
-async function selectLocation(
-  location: LocationSuggestion
-) {
+async function loadSavedCities() {
+  const savedCities =
+    getSavedCities()
+
+  if (savedCities.length === 0) {
+    weather.value = []
+    return
+  }
+
   loading.value = true
   errorMessage.value = ''
 
   try {
-    const result =
-      await getWeatherByCoordinates(
-        location.latitude,
-        location.longitude
-      )
+    const results: WeatherData[] = []
 
-    weather.value = [result]
+    for (const city of savedCities) {
+      try {
+        const result =
+          await getWeather(city)
 
-    saveWeatherCity(result)
+        results.push(result)
+      } catch {
+        // Ignore cities that fail to load
+      }
+    }
 
+    weather.value = results
   } catch (error) {
     errorMessage.value =
       error instanceof Error
         ? error.message
-        : 'Unable to load weather.'
+        : 'Unable to load saved cities.'
   } finally {
     loading.value = false
   }
 }
 
 /*
- * Get weather for the user's
- * current location.
+ * Selecting a city from SearchBar
+ * only opens the detail page.
+ *
+ * It does NOT save the city.
  */
+function selectLocation(
+  location: LocationSuggestion
+) {
+  router.push({
+    name: 'weather-detail',
+    params: {
+      city: location.name,
+    },
+  })
+}
+
 function getCurrentLocation() {
   if (!navigator.geolocation) {
     locationErrorMessage.value =
       'Geolocation is not supported by your browser.'
+
     return
   }
 
@@ -130,6 +141,7 @@ function getCurrentLocation() {
         locationLoading.value = false
       }
     },
+
     (error) => {
       locationLoading.value = false
 
@@ -144,6 +156,7 @@ function getCurrentLocation() {
           'Unable to retrieve your location.'
       }
     },
+
     {
       enableHighAccuracy: true,
       timeout: 10000,
@@ -157,14 +170,13 @@ function openAccount() {
 }
 
 onMounted(() => {
-  loadSavedWeather()
   getCurrentLocation()
+  loadSavedCities()
 })
 </script>
 
 <template>
   <main class="city-list-page">
-
     <header class="city-list-page__header">
       <h1 class="city-list-page__title">
         Weather
@@ -204,6 +216,7 @@ onMounted(() => {
       {{ locationErrorMessage }}
     </p>
 
+    <!-- Current Location -->
     <section
       v-if="currentLocationWeather"
       class="city-list-page__cards"
@@ -223,7 +236,7 @@ onMounted(() => {
       v-if="loading"
       class="city-list-page__loading"
     >
-      Loading weather...
+      Loading saved cities...
     </p>
 
     <p
@@ -234,8 +247,9 @@ onMounted(() => {
       {{ errorMessage }}
     </p>
 
+    <!-- Saved Cities -->
     <section
-      v-if="!loading && weather.length"
+      v-if="!loading && weather.length > 0"
       class="city-list-page__cards"
     >
       <WeatherCard
@@ -249,6 +263,5 @@ onMounted(() => {
         :icon="item.icon"
       />
     </section>
-
   </main>
 </template>
