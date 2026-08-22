@@ -1,30 +1,244 @@
 <script setup lang="ts">
-import './SearchBar.css'
-import BaseInput from '../../atoms/BaseInput/BaseInput.vue'
-//Make searchbar v-model compatible, no need to touch the value directly -->
-//Format: SearchBar v-model="..." -->
+import { ref, watch } from 'vue'
 
-defineProps<{
+import './SearchBar.css'
+
+import BaseInput from '../../atoms/BaseInput/BaseInput.vue'
+
+import {
+  searchLocations,
+} from '../../../services/weatherApi'
+
+import type {
+  LocationSuggestion,
+} from '../../../services/weatherApi'
+
+const props = defineProps<{
   modelValue: string
 }>()
 
-//Re-emitted to the parrent whenever input change
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string]
+
+  search: [
+    location: LocationSuggestion
+  ]
 }>()
+
+const suggestions =
+  ref<LocationSuggestion[]>([])
+
+const loading =
+  ref(false)
+
+const showSuggestions =
+  ref(false)
+
+let debounceTimer:
+  ReturnType<typeof setTimeout> | undefined
+
+/*
+ * Search for locations after the user
+ * stops typing for a short period.
+ */
+watch(
+  () => props.modelValue,
+  (value) => {
+
+    clearTimeout(debounceTimer)
+
+    const query = value.trim()
+
+    if (query.length < 2) {
+      suggestions.value = []
+      showSuggestions.value = false
+      return
+    }
+
+    debounceTimer = setTimeout(
+      async () => {
+
+        loading.value = true
+
+        try {
+
+          suggestions.value =
+            await searchLocations(query)
+
+          showSuggestions.value =
+            suggestions.value.length > 0
+
+        } catch {
+
+          suggestions.value = []
+          showSuggestions.value = false
+
+        } finally {
+
+          loading.value = false
+
+        }
+
+      },
+      300
+    )
+  }
+)
+
+/*
+ * User selects a location.
+ */
+function selectLocation(
+  location: LocationSuggestion
+) {
+
+  const displayName =
+    getDisplayName(location)
+
+  emit(
+    'update:modelValue',
+    displayName
+  )
+
+  emit(
+    'search',
+    location
+  )
+
+  showSuggestions.value = false
+}
+
+/*
+ * Build a readable location name.
+ */
+function getDisplayName(
+  location: LocationSuggestion
+): string {
+
+  const parts = [
+    location.name,
+    location.state,
+    getCountryName(location.country),
+  ].filter(Boolean)
+
+  return parts.join(', ')
+}
+
+/*
+ * Convert country code into
+ * readable country name.
+ */
+function getCountryName(
+  countryCode: string
+): string {
+
+  try {
+
+    const displayNames =
+      new Intl.DisplayNames(
+        ['en'],
+        {
+          type: 'region',
+        }
+      )
+
+    return (
+      displayNames.of(countryCode)
+      ?? countryCode
+    )
+
+  } catch {
+
+    return countryCode
+
+  }
+}
+
+/*
+ * Search when Enter is pressed.
+ */
+function handleEnter() {
+
+  if (
+    suggestions.value.length > 0
+  ) {
+
+    selectLocation(
+      suggestions.value[0]
+    )
+
+  }
+}
 </script>
 
 <template>
   <div class="search-bar">
-  <!-- Decorative search icon -->
-    <span class="search-bar__icon" aria-hidden="true">⌕</span>
 
-  <!-- Pass modelValue down, and relay baseInput's update -->
-    <BaseInput
-      :model-value="modelValue"
-      placeholder="Search for a city or airport"
-      aria-label="Search for a city or airport"
-      @update:model-value="$emit('update:modelValue', $event)"
-    />
+    <div class="search-bar__input-wrapper">
+
+      <span
+        class="search-bar__icon"
+        aria-hidden="true"
+      >
+        ⌕
+      </span>
+
+      <BaseInput
+        :model-value="modelValue"
+        placeholder="Search for a city or airport"
+        aria-label="Search for a city or airport"
+        @update:model-value="
+          emit('update:modelValue', $event)
+        "
+        @keydown.enter="handleEnter"
+        @focus="
+          showSuggestions =
+            suggestions.length > 0
+        "
+      />
+
+    </div>
+
+    <!-- Suggestions -->
+
+    <div
+      v-if="showSuggestions"
+      class="search-bar__suggestions"
+    >
+
+      <button
+        v-for="location in suggestions"
+        :key="`${location.latitude}-${location.longitude}`"
+        class="search-bar__suggestion"
+        type="button"
+        @click="
+          selectLocation(location)
+        "
+      >
+
+        <span
+          class="search-bar__suggestion-icon"
+          aria-hidden="true"
+        >
+          📍
+        </span>
+
+        <span
+          class="search-bar__suggestion-text"
+        >
+          {{ getDisplayName(location) }}
+        </span>
+
+      </button>
+
+    </div>
+
+    <p
+      v-if="loading"
+      class="search-bar__loading"
+    >
+      Searching locations...
+    </p>
+
   </div>
 </template>
