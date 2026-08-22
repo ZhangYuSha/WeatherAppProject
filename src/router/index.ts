@@ -3,6 +3,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import CityListPage from '../pages/CityListPage/CityListPage.vue'
 import AccountPage from '../pages/AccountPage/AccountPage.vue'
+import WeatherDetailPage from '../pages/WeatherDetailPage/WeatherDetailPage.vue'
 
 const router = createRouter({
     //Ensure the URL look normal rather than using #, require server configuration
@@ -17,6 +18,11 @@ const router = createRouter({
       path: '/account',
       name: 'account',
       component: AccountPage,
+    },
+    {
+        path: '/weather/:city',
+        name: 'weather-detail',
+        component: WeatherDetailPage,
     },
   ],
 })
