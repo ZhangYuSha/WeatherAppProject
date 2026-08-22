@@ -9,3 +9,10 @@
 .city-list-page__title {
   margin: 0;
 }
+
+.city-list-page__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
