@@ -4,70 +4,91 @@
   box-sizing: border-box;
 }
 
-/* Header */
+/* =========================
+   Header
+========================= */
 
 .weather-detail-page__header {
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
+  position: relative;
+  display: flex;
   align-items: center;
+  justify-content: center;
   margin-bottom: 24px;
 }
 
-.weather-detail-page__back,
-.weather-detail-page__delete {
+.weather-detail-page__back {
+  position: absolute;
+  left: 0;
   border: none;
   background: transparent;
+  font-size: 32px;
   cursor: pointer;
+  padding: 4px 12px;
 }
 
-.weather-detail-page__back {
-  font-size: 36px;
-  text-align: left;
-}
-
-.weather-detail-page__delete {
-  font-size: 20px;
-  text-align: right;
-}
-
-.weather-detail-page__back:hover,
-.weather-detail-page__delete:hover {
+.weather-detail-page__back:hover {
   opacity: 0.6;
 }
 
 .weather-detail-page__city {
   margin: 0;
-  text-align: center;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
 }
 
-/* Date */
-
-.weather-detail-page__date {
-  margin: 0;
-  text-align: center;
-  font-size: 18px;
-  color: #666;
+.weather-detail-page__delete {
+  position: absolute;
+  right: 0;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
 }
 
-/* Current weather */
+.weather-detail-page__delete:hover {
+  opacity: 0.6;
+}
 
-.weather-detail-page__current {
+/* =========================
+   Loading / Error
+========================= */
+
+.weather-detail-page__loading {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.weather-detail-page__error {
+  margin-top: 24px;
+  text-align: center;
+  color: #c62828;
+}
+
+/* =========================
+   Main Weather
+========================= */
+
+.weather-detail-page__main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  margin-top: 32px;
 }
 
-.weather-detail-page__icon {
-  width: 100px;
-  height: 100px;
+.weather-detail-page__date {
+  margin: 0;
+  font-size: 17px;
+  color: #666;
+  text-align: center;
+}
+
+.weather-detail-page__weather-icon {
+  width: 120px;
+  height: 120px;
+  margin-top: 20px;
 }
 
 .weather-detail-page__temperature {
-  margin: 4px 0 0;
+  margin: 0;
   font-size: 72px;
   font-weight: 600;
   line-height: 1;
@@ -75,37 +96,38 @@
 
 .weather-detail-page__condition {
   margin: 12px 0 0;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 500;
   text-transform: capitalize;
 }
 
-/* Last update */
-
-.weather-detail-page__update {
+.weather-detail-page__last-update {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 16px;
   color: #666;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .weather-detail-page__refresh {
   border: none;
   background: transparent;
+  font-size: 20px;
   cursor: pointer;
-  font-size: 24px;
-  padding: 0;
 }
 
 .weather-detail-page__refresh:hover {
-  transform: rotate(30deg);
+  opacity: 0.6;
 }
 
-/* Sections */
+/* =========================
+   Sections
+========================= */
 
 .weather-detail-page__section {
+  width: 100%;
+  max-width: 900px;
   margin-top: 40px;
 }
 
@@ -115,152 +137,119 @@
   font-weight: 700;
 }
 
-/* Hourly Forecast */
+/* =========================
+   Hourly Forecast
+========================= */
 
 .weather-detail-page__hourly {
   display: flex;
   gap: 12px;
-
-  /*
-   * This is what makes the forecast
-   * horizontally scrollable.
-   */
+  width: 100%;
   overflow-x: auto;
-
-  /*
-   * Prevent the cards from wrapping.
-   */
-  flex-wrap: nowrap;
-
   padding-bottom: 12px;
-
-  /*
-   * Makes scrolling feel nicer on mobile.
-   */
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .weather-detail-page__hour {
-  /*
-   * Fixed width means the cards stay
-   * beside each other instead of shrinking.
-   */
   flex: 0 0 80px;
-
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 14px 10px;
-
   border-radius: 14px;
-
   background: #f2f2f2;
-
-  text-align: center;
-}
-
-.weather-detail-page__hour-time {
-  margin: 0;
-
-  font-size: 14px;
-
-  font-weight: 600;
 }
 
 .weather-detail-page__hour-icon {
   width: 45px;
   height: 45px;
-
-  margin: 8px 0;
+  margin-bottom: 6px;
 }
 
 .weather-detail-page__hour-temperature {
   margin: 0;
-
-  font-size: 16px;
-
+  font-size: 17px;
   font-weight: 600;
 }
 
+.weather-detail-page__hour-time {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
 
-/* Weekly Forecast */
+/* =========================
+   Weekly Forecast
+========================= */
 
 .weather-detail-page__weekly {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
 }
 
 .weather-detail-page__day {
-  display: grid;
-
-  grid-template-columns:
-    1fr
-    50px
-    100px;
-
+  flex: 0 0 110px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-
-  padding: 12px 16px;
-
-  border-radius: 12px;
-
+  padding: 16px 12px;
+  border-radius: 14px;
   background: #f2f2f2;
 }
 
 .weather-detail-page__day-name {
   margin: 0;
-
   font-size: 16px;
-
-  font-weight: 500;
-}
-
-.weather-detail-page__day-icon {
-  width: 40px;
-  height: 40px;
-}
-
-.weather-detail-page__day-temperature {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-
-  font-size: 15px;
-
   font-weight: 600;
 }
 
-/* Loading / Error */
-
-.weather-detail-page__loading,
-.weather-detail-page__error {
-  text-align: center;
-
-  margin-top: 32px;
+.weather-detail-page__day-icon {
+  width: 50px;
+  height: 50px;
+  margin: 8px 0;
 }
 
-.weather-detail-page__error {
-  color: #c62828;
+.weather-detail-page__day-temperature {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }
 
+.weather-detail-page__day-high-low {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
 
-/* Mobile */
+/* =========================
+   Mobile
+========================= */
 
 @media (max-width: 600px) {
-
   .weather-detail-page {
     padding: 24px 20px;
   }
 
   .weather-detail-page__city {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .weather-detail-page__temperature {
-    font-size: 64px;
+    font-size: 60px;
   }
 
-  .weather-detail-page__condition {
-    font-size: 20px;
+  .weather-detail-page__weather-icon {
+    width: 100px;
+    height: 100px;
   }
 
+  .weather-detail-page__section {
+    margin-top: 32px;
+  }
 }
