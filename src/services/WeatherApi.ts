@@ -9,7 +9,6 @@ const FORECAST_URL =
 const GEO_URL =
   'https://api.openweathermap.org/geo/1.0/direct'
 
-
 /* =========================
    Types
 ========================= */
@@ -43,8 +42,9 @@ export interface LocationSuggestion {
   name: string
   country: string
   state?: string
+  latitude: number
+  longitude: number
 }
-
 
 /* =========================
    OpenWeather Response Types
@@ -52,13 +52,11 @@ export interface LocationSuggestion {
 
 interface OpenWeatherResponse {
   name: string
-
   main: {
     temp: number
     temp_max: number
     temp_min: number
   }
-
   weather: {
     main: string
     description: string
@@ -66,21 +64,17 @@ interface OpenWeatherResponse {
   }[]
 }
 
-
 interface OpenWeatherForecastResponse {
   city: {
     name: string
   }
-
   list: {
     dt: number
-
     main: {
       temp: number
       temp_max: number
       temp_min: number
     }
-
     weather: {
       main: string
       description: string
@@ -89,7 +83,6 @@ interface OpenWeatherForecastResponse {
   }[]
 }
 
-
 /* =========================
    Get Weather By City
 ========================= */
@@ -97,36 +90,17 @@ interface OpenWeatherForecastResponse {
 export async function getWeather(
   city: string
 ): Promise<WeatherData> {
-
   const url = new URL(BASE_URL)
 
-  url.searchParams.append(
-    'q',
-    city
-  )
+  url.searchParams.append('q', city)
+  url.searchParams.append('appid', API_KEY)
+  url.searchParams.append('units', 'metric')
 
-  url.searchParams.append(
-    'appid',
-    API_KEY
-  )
-
-  url.searchParams.append(
-    'units',
-    'metric'
-  )
-
-
-  const response =
-    await fetch(url)
-
+  const response = await fetch(url)
 
   if (!response.ok) {
-
     if (response.status === 404) {
-
-      throw new Error(
-        'City not found.'
-      )
+      throw new Error('City not found.')
     }
 
     throw new Error(
@@ -134,38 +108,18 @@ export async function getWeather(
     )
   }
 
-
-  const data:
-    OpenWeatherResponse =
+  const data: OpenWeatherResponse =
     await response.json()
-
 
   return {
     city: data.name,
-
-    temperature:
-      Math.round(
-        data.main.temp
-      ),
-
-    condition:
-      data.weather[0].description,
-
-    icon:
-      data.weather[0].icon,
-
-    high:
-      Math.round(
-        data.main.temp_max
-      ),
-
-    low:
-      Math.round(
-        data.main.temp_min
-      ),
+    temperature: Math.round(data.main.temp),
+    condition: data.weather[0].description,
+    icon: data.weather[0].icon,
+    high: Math.round(data.main.temp_max),
+    low: Math.round(data.main.temp_min),
   }
 }
-
 
 /* =========================
    Get Weather By Coordinates
@@ -175,10 +129,7 @@ export async function getWeatherByCoordinates(
   latitude: number,
   longitude: number
 ): Promise<WeatherData> {
-
-  const url =
-    new URL(BASE_URL)
-
+  const url = new URL(BASE_URL)
 
   url.searchParams.append(
     'lat',
@@ -200,15 +151,10 @@ export async function getWeatherByCoordinates(
     'metric'
   )
 
-
-  const response =
-    await fetch(url)
-
+  const response = await fetch(url)
 
   if (!response.ok) {
-
     if (response.status === 404) {
-
       throw new Error(
         'Weather location not found.'
       )
@@ -219,38 +165,18 @@ export async function getWeatherByCoordinates(
     )
   }
 
-
-  const data:
-    OpenWeatherResponse =
+  const data: OpenWeatherResponse =
     await response.json()
-
 
   return {
     city: data.name,
-
-    temperature:
-      Math.round(
-        data.main.temp
-      ),
-
-    condition:
-      data.weather[0].description,
-
-    icon:
-      data.weather[0].icon,
-
-    high:
-      Math.round(
-        data.main.temp_max
-      ),
-
-    low:
-      Math.round(
-        data.main.temp_min
-      ),
+    temperature: Math.round(data.main.temp),
+    condition: data.weather[0].description,
+    icon: data.weather[0].icon,
+    high: Math.round(data.main.temp_max),
+    low: Math.round(data.main.temp_min),
   }
 }
-
 
 /* =========================
    Get Weather Forecast
@@ -262,38 +188,17 @@ export async function getWeatherForecast(
   hourly: HourlyForecastData[]
   daily: DailyForecastData[]
 }> {
+  const url = new URL(FORECAST_URL)
 
-  const url =
-    new URL(FORECAST_URL)
+  url.searchParams.append('q', city)
+  url.searchParams.append('appid', API_KEY)
+  url.searchParams.append('units', 'metric')
 
-
-  url.searchParams.append(
-    'q',
-    city
-  )
-
-  url.searchParams.append(
-    'appid',
-    API_KEY
-  )
-
-  url.searchParams.append(
-    'units',
-    'metric'
-  )
-
-
-  const response =
-    await fetch(url)
-
+  const response = await fetch(url)
 
   if (!response.ok) {
-
     if (response.status === 404) {
-
-      throw new Error(
-        'City not found.'
-      )
+      throw new Error('City not found.')
     }
 
     throw new Error(
@@ -301,201 +206,129 @@ export async function getWeatherForecast(
     )
   }
 
-
-  const data:
-    OpenWeatherForecastResponse =
+  const data: OpenWeatherForecastResponse =
     await response.json()
-
 
   /* =========================
      Hourly Forecast
   ========================= */
 
-  const hourly:
-    HourlyForecastData[] =
+  const hourly: HourlyForecastData[] =
     data.list.map((item) => {
-
-      const date =
-        new Date(
-          item.dt * 1000
-        )
-
+      const date = new Date(item.dt * 1000)
 
       return {
-
-        time:
-          new Intl.DateTimeFormat(
-            'en-US',
-            {
-              hour: 'numeric',
-              minute: '2-digit',
-            }
-          ).format(date),
+        time: new Intl.DateTimeFormat(
+          'en-US',
+          {
+            hour: 'numeric',
+            minute: '2-digit',
+          }
+        ).format(date),
 
         temperature:
-          Math.round(
-            item.main.temp
-          ),
+          Math.round(item.main.temp),
 
         condition:
           item.weather[0].description,
 
         icon:
           item.weather[0].icon,
-
       }
     })
-
 
   /* =========================
      Group Forecast By Day
   ========================= */
 
   const groupedByDay =
-    new Map<
-      string,
-      typeof data.list
-    >()
+    new Map<string, typeof data.list>()
 
+  data.list.forEach((item) => {
+    const date = new Date(item.dt * 1000)
 
-  data.list.forEach(
-    (item) => {
+    const year = date.getFullYear()
 
-      const date =
-        new Date(
-          item.dt * 1000
-        )
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, '0')
 
+    const day = String(
+      date.getDate()
+    ).padStart(2, '0')
 
-      const year =
-        date.getFullYear()
+    const dayKey =
+      `${year}-${month}-${day}`
 
-      const month =
-        String(
-          date.getMonth() + 1
-        ).padStart(
-          2,
-          '0'
-        )
-
-      const day =
-        String(
-          date.getDate()
-        ).padStart(
-          2,
-          '0'
-        )
-
-
-      const dayKey =
-        `${year}-${month}-${day}`
-
-
-      if (
-        !groupedByDay.has(
-          dayKey
-        )
-      ) {
-
-        groupedByDay.set(
-          dayKey,
-          []
-        )
-      }
-
-
-      groupedByDay
-        .get(dayKey)!
-        .push(item)
-
+    if (!groupedByDay.has(dayKey)) {
+      groupedByDay.set(dayKey, [])
     }
-  )
 
+    groupedByDay
+      .get(dayKey)!
+      .push(item)
+  })
 
   /* =========================
      Weekly Forecast
   ========================= */
 
-  const daily:
-    DailyForecastData[] =
+  const daily: DailyForecastData[] =
     Array.from(
       groupedByDay.entries()
-    ).map(
-      ([dayKey, items]) => {
+    ).map(([dayKey, items]) => {
+      const firstItem = items[0]
 
-        const firstItem =
-          items[0]
+      const temperatures =
+        items.map(
+          (item) => item.main.temp
+        )
 
+      const high = Math.max(
+        ...temperatures
+      )
 
-        const temperatures =
-          items.map(
-            (item) =>
-              item.main.temp
-          )
+      const low = Math.min(
+        ...temperatures
+      )
 
+      const date =
+        new Date(
+          `${dayKey}T12:00:00`
+        )
 
-        const high =
-          Math.max(
-            ...temperatures
-          )
+      return {
+        day: new Intl.DateTimeFormat(
+          'en-US',
+          {
+            weekday: 'short',
+          }
+        ).format(date),
 
+        temperature:
+          Math.round(
+            firstItem.main.temp
+          ),
 
-        const low =
-          Math.min(
-            ...temperatures
-          )
+        high:
+          Math.round(high),
 
+        low:
+          Math.round(low),
 
-        const date =
-          new Date(
-            `${dayKey}T12:00:00`
-          )
+        condition:
+          firstItem.weather[0].description,
 
-
-        return {
-
-          day:
-            new Intl.DateTimeFormat(
-              'en-US',
-              {
-                weekday: 'short',
-              }
-            ).format(date),
-
-          temperature:
-            Math.round(
-              firstItem.main.temp
-            ),
-
-          high:
-            Math.round(
-              high
-            ),
-
-          low:
-            Math.round(
-              low
-            ),
-
-          condition:
-            firstItem.weather[0]
-              .description,
-
-          icon:
-            firstItem.weather[0]
-              .icon,
-
-        }
+        icon:
+          firstItem.weather[0].icon,
       }
-    )
-
+    })
 
   return {
     hourly,
     daily,
   }
 }
-
 
 /* =========================
    Search City Suggestions
@@ -504,61 +337,35 @@ export async function getWeatherForecast(
 export async function searchLocations(
   query: string
 ): Promise<LocationSuggestion[]> {
+  const url = new URL(GEO_URL)
 
-  const url =
-    new URL(GEO_URL)
+  url.searchParams.append('q', query)
+  url.searchParams.append('limit', '5')
+  url.searchParams.append('appid', API_KEY)
 
-
-  url.searchParams.append(
-    'q',
-    query
-  )
-
-  url.searchParams.append(
-    'limit',
-    '5'
-  )
-
-  url.searchParams.append(
-    'appid',
-    API_KEY
-  )
-
-
-  const response =
-    await fetch(url)
-
+  const response = await fetch(url)
 
   if (!response.ok) {
-
     throw new Error(
       'Unable to search locations.'
     )
   }
 
-
-  const data =
-    await response.json()
-
+  const data = await response.json()
 
   return data.map(
-    (
-      item: {
-        name: string
-        country: string
-        state?: string
-      }
-    ) => ({
-
-      name:
-        item.name,
-
-      country:
-        item.country,
-
-      state:
-        item.state,
-
+    (item: {
+      name: string
+      country: string
+      state?: string
+      lat: number
+      lon: number
+    }) => ({
+      name: item.name,
+      country: item.country,
+      state: item.state,
+      latitude: item.lat,
+      longitude: item.lon,
     })
   )
 }
