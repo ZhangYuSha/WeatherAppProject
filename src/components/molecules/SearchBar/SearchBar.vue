@@ -2,8 +2,8 @@
 import { ref, watch } from 'vue'
 import './SearchBar.css'
 import BaseInput from '../../atoms/BaseInput/BaseInput.vue'
-import { searchLocations } from '../../../services/weatherApi'
-import type { LocationSuggestion } from '../../../services/weatherApi'
+import { searchLocations } from '../../../services/WeatherApi'
+import type { LocationSuggestion } from '../../../services/WeatherApi'
 
 const props = defineProps<{
   modelValue: string
