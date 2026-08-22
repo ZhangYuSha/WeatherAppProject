@@ -1,15 +1,6 @@
 <script setup lang="ts">
-
-import {
-  ref,
-  computed,
-  onMounted,
-} from 'vue'
-
-import {
-  useRoute,
-  useRouter,
-} from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import './WeatherDetailPage.css'
 
@@ -24,159 +15,96 @@ import type {
   DailyForecastData,
 } from '../../services/weatherApi'
 
-
 const route = useRoute()
-
 const router = useRouter()
 
+// City name taken from the route param (e.g. /weather/London)
+const city = String(route.params.city)
 
-const weather =
-  ref<WeatherData | null>(null)
+// Current weather for this city
+const weather = ref<WeatherData | null>(null)
 
-const hourlyForecast =
-  ref<HourlyForecastData[]>([])
+// Forecast data broken down by hour and by day
+const hourlyForecast = ref<HourlyForecastData[]>([])
+const dailyForecast = ref<DailyForecastData[]>([])
 
-const weeklyForecast =
-  ref<DailyForecastData[]>([])
+// True while weather/forecast data is being fetched
+const loading = ref(false)
 
-const loading =
-  ref(false)
+// Holds a user-facing error message; empty string means "no error"
+const errorMessage = ref('')
 
-const errorMessage =
-  ref('')
+// Formatted time string shown next to the refresh button
+const lastUpdated = ref('')
 
-const lastUpdated =
-  ref(new Date())
-
-
-const city = computed(() => {
-  return String(route.params.city)
-})
-
-
-const formattedDate =
-  computed(() => {
-
-    return new Intl.DateTimeFormat(
-      'en-GB',
-      {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }
-    ).format(new Date())
-  })
-
-
-const formattedLastUpdated =
-  computed(() => {
-
-    return new Intl.DateTimeFormat(
-      'en-US',
-      {
-        hour: 'numeric',
-        minute: '2-digit',
-      }
-    ).format(lastUpdated.value)
-  })
-
-
-const weatherIcon =
-  computed(() => {
-
-    if (!weather.value) {
-      return ''
-    }
-
-    return `https://openweathermap.org/img/wn/${weather.value.icon}@2x.png`
-  })
-
-
-async function loadWeather() {
-
-  loading.value = true
-
-  errorMessage.value = ''
-
-  try {
-
-    /*
-     * Load current weather
-     */
-    weather.value =
-      await getWeather(city.value)
-
-
-    /*
-     * Load forecast
-     */
-    const forecast =
-      await getWeatherForecast(
-        city.value
-      )
-
-
-    hourlyForecast.value =
-      forecast.hourly
-
-    weeklyForecast.value =
-      forecast.daily
-
-
-    lastUpdated.value =
-      new Date()
-
-  } catch (error) {
-
-    errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : 'Unable to load weather.'
-
-  } finally {
-
-    loading.value = false
-  }
-}
-
-
-async function refreshWeather() {
-  await loadWeather()
-}
-
-
+/*
+ * Go back to the city list.
+ */
 function goBack() {
   router.back()
 }
 
+/*
+ * Load weather details.
+ * Fetches both the current weather and the forecast,
+ * then updates the "last updated" timestamp.
+ */
+async function loadWeather() {
+  loading.value = true
+  errorMessage.value = ''
 
-function deleteCity() {
+  try {
+    // Fetch current weather for the city
+    const weatherResult = await getWeather(city)
+    weather.value = weatherResult
 
-  router.push({
-    name: 'city-list',
-  })
+    // Fetch hourly and daily forecast for the same city
+    const forecastResult = await getWeatherForecast(city)
+    hourlyForecast.value = forecastResult.hourly
+    dailyForecast.value = forecastResult.daily
+
+    updateLastUpdated()
+  } catch (error) {
+    // Narrow unknown error type before reading .message
+    errorMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'Unable to load weather.'
+  } finally {
+    loading.value = false
+  }
 }
 
+/*
+ * Update the "Last Update" time.
+ * Called every time loadWeather() succeeds.
+ */
+function updateLastUpdated() {
+  lastUpdated.value = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date())
+}
 
+/*
+ * Refresh weather data.
+ * Triggered by the refresh button; just re-runs loadWeather().
+ */
+async function refreshWeather() {
+  await loadWeather()
+}
+
+// Load weather as soon as the page mounts
 onMounted(() => {
   loadWeather()
 })
-
 </script>
 
-
 <template>
-
   <main class="weather-detail-page">
 
-
-    <!-- Header -->
-
-    <header
-      class="weather-detail-page__header"
-    >
-
+    <!-- Header: back button, city name, delete button -->
+    <header class="weather-detail-page__header">
       <button
         class="weather-detail-page__back"
         type="button"
@@ -186,234 +114,144 @@ onMounted(() => {
         &lt;
       </button>
 
-
-      <h1
-        class="weather-detail-page__city"
-      >
-        {{ weather?.city || city }}
+      <!-- Prefer the API-returned city name once loaded; fall back to the route param -->
+      <h1 v-if="weather" class="weather-detail-page__city">
+        {{ weather.city }}
+      </h1>
+      <h1 v-else class="weather-detail-page__city">
+        {{ city }}
       </h1>
 
-
+      <!-- Note: no click handler wired up yet -->
       <button
         class="weather-detail-page__delete"
         type="button"
         aria-label="Delete city"
-        @click="deleteCity"
       >
         🗑
       </button>
-
     </header>
 
-
-    <!-- Loading -->
-
-    <p
-      v-if="loading"
-      class="weather-detail-page__loading"
-    >
+    <!-- Shown only while the initial or refresh request is in flight -->
+    <p v-if="loading" class="weather-detail-page__loading">
       Loading weather...
     </p>
 
-
-    <!-- Error -->
-
-    <p
-      v-if="errorMessage"
-      class="weather-detail-page__error"
-      role="alert"
-    >
+    <!-- Shown only if the last request failed -->
+    <p v-if="errorMessage" class="weather-detail-page__error" role="alert">
       {{ errorMessage }}
     </p>
 
+    <!-- Main content: only rendered once weather has loaded successfully -->
+    <section v-if="weather && !loading" class="weather-detail-page__main">
 
-    <!-- Weather -->
-
-    <section
-      v-if="weather && !loading"
-      class="weather-detail-page__content"
-    >
-
-
-      <!-- Date -->
-
-      <p
-        class="weather-detail-page__date"
-      >
-        {{ formattedDate }}
+      <!-- Today's full date, always shows the current date (not forecast-specific) -->
+      <p class="weather-detail-page__date">
+        {{
+          new Intl.DateTimeFormat('en-US', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }).format(new Date())
+        }}
       </p>
 
+      <!-- Large weather icon from OpenWeather's icon CDN -->
+      <img
+        class="weather-detail-page__weather-icon"
+        :src="`https://openweathermap.org/img/wn/${weather.icon}@2x.png`"
+        :alt="weather.condition"
+      />
 
-      <!-- Current weather -->
+      <!-- Current temperature -->
+      <p class="weather-detail-page__temperature">
+        {{ weather.temperature }}°
+      </p>
 
-      <section
-        class="weather-detail-page__current"
-      >
+      <!-- Current condition, e.g. "light rain" -->
+      <p class="weather-detail-page__condition">
+        {{ weather.condition }}
+      </p>
 
-        <img
-          class="weather-detail-page__icon"
-          :src="weatherIcon"
-          :alt="weather.condition"
-        />
-
-
-        <p
-          class="weather-detail-page__temperature"
+      <!-- Last updated time + manual refresh button -->
+      <div class="weather-detail-page__last-update">
+        <span>Last Update {{ lastUpdated }}</span>
+        <button
+          class="weather-detail-page__refresh"
+          type="button"
+          aria-label="Refresh weather"
+          @click="refreshWeather"
         >
-          {{ weather.temperature }}°
-        </p>
+          ↻
+        </button>
+      </div>
 
-
-        <p
-          class="weather-detail-page__condition"
-        >
-          {{ weather.condition }}
-        </p>
-
-
-        <div
-          class="weather-detail-page__update"
-        >
-
-          <span>
-            Last Update
-            {{ formattedLastUpdated }}
-          </span>
-
-
-          <button
-            class="weather-detail-page__refresh"
-            type="button"
-            aria-label="Refresh weather"
-            @click="refreshWeather"
-          >
-            ↻
-          </button>
-
-        </div>
-
-      </section>
-
-
-      <!-- Hourly Forecast -->
-
-      <section
-        class="weather-detail-page__section"
-      >
-
-        <h2
-          class="weather-detail-page__section-title"
-        >
+      <!-- Hourly forecast: horizontally scrollable row of cards -->
+      <section class="weather-detail-page__section">
+        <h2 class="weather-detail-page__section-title">
           Hourly Forecast
         </h2>
 
-
-        <!--
-          IMPORTANT:
-          This container is horizontally scrollable.
-
-          We DO NOT limit the number of cards.
-
-          Every forecast point returned
-          by OpenWeather is displayed.
-        -->
-
-        <div
-          class="weather-detail-page__hourly"
-        >
-
+        <!-- No slicing here; every hourly entry returned by the API is shown -->
+        <div class="weather-detail-page__hourly">
           <article
-            v-for="item in hourlyForecast"
-            :key="item.time"
+            v-for="(item, index) in hourlyForecast"
+            :key="`${item.time}-${index}`"
             class="weather-detail-page__hour"
           >
-
-            <p
-              class="weather-detail-page__hour-time"
-            >
-              {{ item.time }}
-            </p>
-
-
+            <!-- Weather picture -->
             <img
               class="weather-detail-page__hour-icon"
               :src="`https://openweathermap.org/img/wn/${item.icon}.png`"
               :alt="item.condition"
             />
-
-
-            <p
-              class="weather-detail-page__hour-temperature"
-            >
+            <!-- Degree -->
+            <p class="weather-detail-page__hour-temperature">
               {{ item.temperature }}°
             </p>
-
+            <!-- Hour -->
+            <p class="weather-detail-page__hour-time">
+              {{ item.time }}
+            </p>
           </article>
-
         </div>
-
       </section>
 
-
-      <!-- Weekly Forecast -->
-
-      <section
-        class="weather-detail-page__section"
-      >
-
-        <h2
-          class="weather-detail-page__section-title"
-        >
+      <!-- Weekly forecast: one card per day, also horizontally scrollable -->
+      <section class="weather-detail-page__section">
+        <h2 class="weather-detail-page__section-title">
           Weekly Forecast
         </h2>
 
-
-        <div
-          class="weather-detail-page__weekly"
-        >
-
+        <div class="weather-detail-page__weekly">
           <article
-            v-for="item in weeklyForecast"
-            :key="item.day"
+            v-for="(item, index) in dailyForecast"
+            :key="`${item.day}-${index}`"
             class="weather-detail-page__day"
           >
-
-            <p
-              class="weather-detail-page__day-name"
-            >
+            <!-- Day -->
+            <p class="weather-detail-page__day-name">
               {{ item.day }}
             </p>
-
-
+            <!-- Weather picture -->
             <img
               class="weather-detail-page__day-icon"
               :src="`https://openweathermap.org/img/wn/${item.icon}.png`"
               :alt="item.condition"
             />
-
-
-            <div
-              class="weather-detail-page__day-temperature"
-            >
-
-              <span>
-                H:{{ item.high }}°
-              </span>
-
-              <span>
-                L:{{ item.low }}°
-              </span>
-
-            </div>
-
+            <!-- Temperature -->
+            <p class="weather-detail-page__day-temperature">
+              {{ item.temperature }}°
+            </p>
+            <!-- High / Low -->
+            <p class="weather-detail-page__day-high-low">
+              H:{{ item.high }}° L:{{ item.low }}°
+            </p>
           </article>
-
         </div>
-
       </section>
 
     </section>
-
   </main>
-
 </template>
