@@ -1,0 +1,11 @@
+.city-list-page {
+  padding: 24px;
+}
+
+.city-list-page__header {
+  margin-bottom: 24px;
+}
+
+.city-list-page__title {
+  margin: 0;
+}

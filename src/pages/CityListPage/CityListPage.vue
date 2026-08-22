@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import SearchBar from '../components/molecules/SearchBar/SearchBar.vue'
+import './CityListPage.css'
+import SearchBar from '../../components/molecules/SearchBar/SearchBar.vue'
 
+// Holds the current search text; bound to SearchBar via v-model
 const searchQuery = ref('')
 </script>
 
@@ -11,24 +13,12 @@ const searchQuery = ref('')
       <h1 class="city-list-page__title">Weather</h1>
     </header>
 
+    <!-- Two-way bound: typing here updates searchQuery, and vice versa -->
     <SearchBar v-model="searchQuery" />
 
+    <!-- Temporary debug output; shows the live query while searchQuery is truthy -->
     <p v-if="searchQuery">
       Searching for: {{ searchQuery }}
     </p>
   </main>
 </template>
-
-<style scoped>
-.city-list-page {
-  padding: 24px;
-}
-
-.city-list-page__header {
-  margin-bottom: 24px;
-}
-
-.city-list-page__title {
-  margin: 0;
-}
-</style>
