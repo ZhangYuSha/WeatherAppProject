@@ -1,0 +1,276 @@
+.account-page {
+  min-height: 100vh;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+/* Header */
+
+.account-page__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.account-page__back {
+  position: absolute;
+  left: 0;
+
+  border: none;
+  background: transparent;
+
+  font-size: 36px;
+  font-weight: 400;
+
+  cursor: pointer;
+  padding: 4px 12px;
+}
+
+.account-page__back:hover {
+  opacity: 0.6;
+}
+
+.account-page__title {
+  margin: 0;
+
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Profile */
+
+.account-page__profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin-bottom: 40px;
+}
+
+.account-page__profile-picture {
+  width: 110px;
+  height: 110px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+
+  margin-bottom: 16px;
+}
+
+.account-page__name {
+  margin: 0;
+
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.account-page__contact {
+  margin: 8px 0 0;
+
+  font-size: 16px;
+  color: #666;
+
+  text-align: center;
+}
+
+/* Form */
+
+.account-page__form {
+  width: 100%;
+  max-width: 600px;
+
+  margin: 0 auto;
+}
+
+.account-page__field {
+  margin-bottom: 24px;
+}
+
+.account-page__field label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Text box */
+
+.account-page__input,
+.account-page__phone-wrapper {
+  width: 100%;
+  min-height: 52px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #d5d5d5;
+  border-radius: 12px;
+
+  background: #f7f7f7;
+
+  font-size: 17px;
+}
+
+/* Input */
+
+.account-page__input {
+  padding: 0 16px;
+
+  outline: none;
+}
+
+.account-page__input:not([readonly]) {
+  background: #ffffff;
+  border-color: #999;
+}
+
+.account-page__input:focus {
+  border-color: #555;
+}
+
+/* Phone */
+
+.account-page__phone-wrapper {
+
+  display: flex;
+
+  align-items: center;
+
+  width: 100%;
+
+  min-height: 52px;
+
+  box-sizing: border-box;
+
+  padding-left: 16px;
+
+  border: 1px solid #d5d5d5;
+
+  border-radius: 12px;
+
+  background: #f7f7f7;
+
+  font-size: 17px;
+
+}
+
+.account-page__phone-wrapper:focus-within {
+
+  border-color: #555;
+
+  background: #ffffff;
+
+}
+
+.account-page__phone-wrapper:has(
+  .account-page__phone-input:not([readonly])
+) {
+
+  background: #ffffff;
+
+  border-color: #999;
+
+}
+
+.account-page__flag {
+
+  font-size: 22px;
+
+  margin-right: 10px;
+
+}
+
+.account-page__phone-input {
+
+  flex: 1;
+
+  height: 50px;
+
+  border: none;
+
+  outline: none;
+
+  background: transparent;
+
+  font-size: 17px;
+
+  color: #777;
+
+}
+
+.account-page__phone-input:not([readonly]) {
+
+  color: #222;
+
+}
+
+/* Buttons */
+
+.account-page__actions {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 32px;
+}
+
+.account-page__button {
+  min-width: 110px;
+
+  padding: 12px 24px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #222;
+  color: white;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.account-page__button:hover {
+  opacity: 0.8;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  .account-page {
+    padding: 24px 20px;
+  }
+
+  .account-page__title {
+    font-size: 24px;
+  }
+
+  .account-page__profile-picture {
+    width: 90px;
+    height: 90px;
+  }
+
+}
+
+.account-page__phone-input {
+  flex: 1;
+
+  height: 50px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  font-size: 17px;
+  color: #777;
+}
+
+.account-page__phone-input:not([readonly]) {
+  color: #222;
+}
