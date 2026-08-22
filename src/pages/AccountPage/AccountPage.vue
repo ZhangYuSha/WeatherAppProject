@@ -1,9 +1,12 @@
-<script setup lang="ts">
-import { ref } from 'vue'
+`<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import './AccountPage.css'
 
 import profilePicture from '../../assets/Account/profile-user-account.svg'
+
+import { getCountries } from '../../services/CountryApi'
+import type { Country } from '../../services/CountryApi'
 
 const router = useRouter()
 
@@ -12,6 +15,11 @@ const isEditing = ref(false)
 const fullName = ref('Isabella')
 const email = ref('isabella@example.com')
 const phoneNumber = ref('012-345-6789')
+
+const countries = ref<Country[]>([])
+const selectedCountry = ref('MY')
+const countryLoading = ref(false)
+const countryError = ref('')
 
 function goBack() {
   router.back()
@@ -24,6 +32,36 @@ function editProfile() {
 function submitProfile() {
   isEditing.value = false
 }
+
+const selectedCountryData = computed(() => {
+  return countries.value.find(
+    (country) =>
+      country.code === selectedCountry.value
+  )
+})
+
+function getFlagUrl(code: string) {
+  return `https://flagcdn.com/w40/${code.toLowerCase()}.png`
+}
+
+onMounted(async () => {
+  countryLoading.value = true
+  countryError.value = ''
+
+  try {
+    countries.value = await getCountries()
+  } catch (error) {
+    console.error(
+      'Failed to load countries:',
+      error
+    )
+
+    countryError.value =
+      'Unable to load countries.'
+  } finally {
+    countryLoading.value = false
+  }
+})
 </script>
 
 <template>
@@ -112,9 +150,40 @@ function submitProfile() {
 
         <div class="account-page__phone-wrapper">
 
-          <span class="account-page__flag">
-            🇲🇾
-          </span>
+          <!-- Country dropdown -->
+          <select
+            v-model="selectedCountry"
+            class="account-page__country"
+            :disabled="
+              !isEditing ||
+              countryLoading
+            "
+            aria-label="Country"
+          >
+
+            <option
+              v-for="country in countries"
+              :key="country.code"
+              :value="country.code"
+            >
+              {{ country.name }}
+            </option>
+
+          </select>
+
+          <!-- Country flag -->
+          <img
+            v-if="selectedCountryData"
+            class="account-page__flag"
+            :src="
+              getFlagUrl(
+                selectedCountryData.code
+              )
+            "
+            :alt="
+              `${selectedCountryData.name} flag`
+            "
+          />
 
           <input
             id="phone"
@@ -125,6 +194,20 @@ function submitProfile() {
           />
 
         </div>
+
+        <p
+          v-if="countryLoading"
+          class="account-page__country-status"
+        >
+          Loading countries...
+        </p>
+
+        <p
+          v-if="countryError"
+          class="account-page__error"
+        >
+          {{ countryError }}
+        </p>
 
       </div>
 
