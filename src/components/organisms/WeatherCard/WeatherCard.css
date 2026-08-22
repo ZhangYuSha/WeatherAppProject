@@ -1,5 +1,7 @@
 .weather-card {
+
   width: 100%;
+
   min-height: 180px;
 
   padding: 24px;
@@ -8,11 +10,26 @@
 
   border-radius: 16px;
 
-  background: #f2f2f2;
+  background-color: #f2f2f2;
+
+  background-position: center;
+
+  background-size: cover;
+
+  background-repeat: no-repeat;
+
+  color: white;
 
   display: flex;
+
   flex-direction: column;
+
   justify-content: space-between;
+
+  cursor: pointer;
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
 }
 
 /* Top section */
@@ -51,7 +68,7 @@
 
 .weather-card__city {
   margin: 4px 0 0;
-
+  color: white;
   font-size: 20px;
   font-weight: 500;
 
