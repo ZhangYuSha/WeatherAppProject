@@ -10,47 +10,58 @@ import WeatherCard from '../../components/organisms/WeatherCard/WeatherCard.vue'
 import profilePicture from '../../assets/Account/profile-user-account.svg'
 
 import {
-  getWeather,
   getWeatherByCoordinates,
 } from '../../services/weatherApi'
 
 import type {
   WeatherData,
+  LocationSuggestion,
 } from '../../services/weatherApi'
 
 const router = useRouter()
 
+// Search input
 const searchQuery = ref('')
 
+// Current location weather
 const currentLocationWeather =
   ref<WeatherData | null>(null)
 
+// Weather from selected search result
 const weather =
   ref<WeatherData[]>([])
 
+// Loading states
 const loading = ref(false)
-
 const locationLoading = ref(false)
 
+// Error messages
 const errorMessage = ref('')
-
 const locationErrorMessage = ref('')
 
-async function searchWeather() {
-  const city = searchQuery.value.trim()
-
-  if (!city) {
-    errorMessage.value = 'Please enter a city name.'
-    return
-  }
-
+/*
+ * Called when the user selects a location
+ * from the autocomplete suggestions.
+ *
+ * The selected location already contains
+ * latitude and longitude, so we use those
+ * coordinates to get accurate weather.
+ */
+async function selectLocation(
+  location: LocationSuggestion
+) {
   loading.value = true
   errorMessage.value = ''
 
   try {
-    const result = await getWeather(city)
+    const result =
+      await getWeatherByCoordinates(
+        location.latitude,
+        location.longitude
+      )
 
     weather.value = [result]
+
   } catch (error) {
     errorMessage.value =
       error instanceof Error
@@ -61,6 +72,9 @@ async function searchWeather() {
   }
 }
 
+/*
+ * Get weather for the user's current location.
+ */
 function getCurrentLocation() {
   if (!navigator.geolocation) {
     locationErrorMessage.value =
@@ -87,13 +101,15 @@ function getCurrentLocation() {
             longitude
           )
 
-        currentLocationWeather.value = result
+        currentLocationWeather.value =
+          result
 
       } catch (error) {
         locationErrorMessage.value =
           error instanceof Error
             ? error.message
             : 'Unable to load weather for your location.'
+
       } finally {
         locationLoading.value = false
       }
@@ -122,10 +138,17 @@ function getCurrentLocation() {
   )
 }
 
+/*
+ * Navigate to the account page.
+ */
 function openAccount() {
   router.push('/account')
 }
 
+/*
+ * Automatically request the user's location
+ * when the weather page loads.
+ */
 onMounted(() => {
   getCurrentLocation()
 })
@@ -159,17 +182,12 @@ onMounted(() => {
 
     <!-- Search -->
 
-    <SearchBar v-model="searchQuery" />
+    <SearchBar
+      v-model="searchQuery"
+      @search="selectLocation"
+    />
 
-    <button
-      class="city-list-page__search-button"
-      type="button"
-      @click="searchWeather"
-    >
-      Search
-    </button>
-
-    <!-- Location loading -->
+    <!-- Current location loading -->
 
     <p
       v-if="locationLoading"
@@ -178,7 +196,7 @@ onMounted(() => {
       Loading your location...
     </p>
 
-    <!-- Location error -->
+    <!-- Current location error -->
 
     <p
       v-if="locationErrorMessage"
@@ -188,7 +206,7 @@ onMounted(() => {
       {{ locationErrorMessage }}
     </p>
 
-    <!-- My Location -->
+    <!-- Current location weather card -->
 
     <section
       v-if="currentLocationWeather"
@@ -226,7 +244,7 @@ onMounted(() => {
       {{ errorMessage }}
     </p>
 
-    <!-- Search results -->
+    <!-- Search result weather cards -->
 
     <section
       v-if="!loading && weather.length"
