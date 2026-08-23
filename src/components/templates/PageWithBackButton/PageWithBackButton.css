@@ -1,0 +1,23 @@
+/* PageWithBackButton.css */
+.page-with-back-button {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-with-back-button__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-with-back-button__back {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.page-with-back-button__title {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+}

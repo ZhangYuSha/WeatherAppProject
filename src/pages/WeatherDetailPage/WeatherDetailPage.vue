@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 
 import './WeatherDetailPage.css'
 
+import PageWithBackButton from '../../components/templates/PageWithBackButton/PageWithBackButton.vue'
+
 import {
   getWeather,
   getWeatherByCoordinates,
@@ -137,10 +139,6 @@ function deleteCity() {
   router.push('/')
 }
 
-function goBack() {
-  router.back()
-}
-
 async function loadWeather() {
   loading.value = true
   errorMessage.value = ''
@@ -197,21 +195,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="weather-detail-page">
-    <header class="weather-detail-page__header">
-      <button
-        class="weather-detail-page__back"
-        type="button"
-        aria-label="Go back"
-        @click="goBack"
-      >
-        &lt;
-      </button>
-
-      <h1 class="weather-detail-page__city">
-        {{ city }}
-      </h1>
-
+  <PageWithBackButton :title="city">
+    <template #action>
       <button
         v-if="!isSaved"
         class="weather-detail-page__delete"
@@ -231,7 +216,7 @@ onMounted(() => {
       >
         🗑
       </button>
-    </header>
+    </template>
 
     <p
       v-if="loading"
@@ -361,5 +346,5 @@ onMounted(() => {
         </div>
       </section>
     </section>
-  </main>
+  </PageWithBackButton>
 </template>

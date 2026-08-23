@@ -1,14 +1,13 @@
-`<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import './AccountPage.css'
+
+import PageWithBackButton from '../../components/templates/PageWithBackButton/PageWithBackButton.vue'
 
 import profilePicture from '../../assets/Account/profile-user-account.svg'
 
 import { getCountries } from '../../services/CountryApi'
 import type { Country } from '../../services/CountryApi'
-
-const router = useRouter()
 
 const isEditing = ref(false)
 
@@ -20,10 +19,6 @@ const countries = ref<Country[]>([])
 const selectedCountry = ref('MY')
 const countryLoading = ref(false)
 const countryError = ref('')
-
-function goBack() {
-  router.back()
-}
 
 function editProfile() {
   isEditing.value = true
@@ -65,26 +60,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="account-page">
-
-    <!-- Header -->
-    <header class="account-page__header">
-
-      <button
-        class="account-page__back"
-        type="button"
-        aria-label="Go back"
-        @click="goBack"
-      >
-        &lt;
-      </button>
-
-      <h1 class="account-page__title">
-        Edit Profile
-      </h1>
-
-    </header>
-
+  <PageWithBackButton title="Edit Profile">
     <!-- Profile summary -->
     <section class="account-page__profile">
 
@@ -235,6 +211,5 @@ onMounted(async () => {
       </div>
 
     </section>
-
-  </main>
+  </PageWithBackButton>
 </template>
