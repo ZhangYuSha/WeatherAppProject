@@ -60,7 +60,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PageWithBackButton title="Edit Profile">
+  <PageWithBackButton class="account-page" title="Edit Profile">
     <!-- Profile summary -->
     <section class="account-page__profile">
 
