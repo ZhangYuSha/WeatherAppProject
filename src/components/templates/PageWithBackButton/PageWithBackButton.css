@@ -1,23 +1,28 @@
-/* PageWithBackButton.css */
-.page-with-back-button {
-  display: flex;
-  flex-direction: column;
-}
-
 .page-with-back-button__header {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  margin-bottom: var(--pwbb-header-margin-bottom, 24px);
 }
 
 .page-with-back-button__back {
-  background: none;
+  position: absolute;
+  left: 0;
   border: none;
+  background: transparent;
+  font-size: var(--pwbb-back-size, 32px);
+  font-weight: var(--pwbb-back-weight, 400);
   cursor: pointer;
+  padding: 4px 12px;
+}
+
+.page-with-back-button__back:hover {
+  opacity: 0.6;
 }
 
 .page-with-back-button__title {
-  flex: 1;
-  text-align: center;
   margin: 0;
+  font-size: var(--pwbb-title-size, 26px);
+  font-weight: 700;
 }
