@@ -195,7 +195,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageWithBackButton :title="city">
+  <PageWithBackButton class="weather-detail-page" :title="city">
     <template #action>
       <button
         v-if="!isSaved"
