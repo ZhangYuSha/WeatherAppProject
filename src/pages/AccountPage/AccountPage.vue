@@ -15,16 +15,91 @@ const fullName = ref('Isabella')
 const email = ref('isabella@example.com')
 const phoneNumber = ref('012-345-6789')
 
+// Per-field validation error messages. Empty string means the
+// field is currently valid (or hasn't been validated yet).
+const fullNameError = ref('')
+const emailError = ref('')
+const phoneNumberError = ref('')
+
 const countries = ref<Country[]>([])
 const selectedCountry = ref('MY')
 const countryLoading = ref(false)
 const countryError = ref('')
+
+const FULL_NAME_MAX_LENGTH = 60
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/
+
+function validateFullName(): boolean {
+  const value = fullName.value.trim()
+
+  if (!value) {
+    fullNameError.value = 'Full name is required.'
+    return false
+  }
+
+  if (value.length > FULL_NAME_MAX_LENGTH) {
+    fullNameError.value = `Full name must be ${FULL_NAME_MAX_LENGTH} characters or fewer.`
+    return false
+  }
+
+  fullNameError.value = ''
+  return true
+}
+
+function validateEmail(): boolean {
+  const value = email.value.trim()
+
+  if (!value) {
+    emailError.value = 'Email is required.'
+    return false
+  }
+
+  if (!EMAIL_PATTERN.test(value)) {
+    emailError.value = 'Enter a valid email address.'
+    return false
+  }
+
+  emailError.value = ''
+  return true
+}
+
+function validatePhoneNumber(): boolean {
+  const value = phoneNumber.value.trim()
+
+  if (!value) {
+    phoneNumberError.value = 'Phone number is required.'
+    return false
+  }
+
+  if (!PHONE_PATTERN.test(value)) {
+    phoneNumberError.value = 'Enter a valid phone number.'
+    return false
+  }
+
+  phoneNumberError.value = ''
+  return true
+}
+
+function validateForm(): boolean {
+  // Run all three so every invalid field shows its own message,
+  // rather than short-circuiting on the first failure.
+  const isFullNameValid = validateFullName()
+  const isEmailValid = validateEmail()
+  const isPhoneNumberValid = validatePhoneNumber()
+
+  return isFullNameValid && isEmailValid && isPhoneNumberValid
+}
 
 function editProfile() {
   isEditing.value = true
 }
 
 function submitProfile() {
+  if (!validateForm()) {
+    return
+  }
+
   isEditing.value = false
 }
 
@@ -94,9 +169,21 @@ onMounted(async () => {
           id="full-name"
           v-model="fullName"
           class="account-page__input"
+          :class="{ 'account-page__input--invalid': fullNameError }"
           type="text"
           :readonly="!isEditing"
+          :aria-invalid="!!fullNameError"
+          :maxlength="FULL_NAME_MAX_LENGTH"
+          @blur="isEditing && validateFullName()"
         />
+
+        <p
+          v-if="fullNameError"
+          class="account-page__field-error"
+          role="alert"
+        >
+          {{ fullNameError }}
+        </p>
 
       </div>
 
@@ -111,9 +198,20 @@ onMounted(async () => {
           id="email"
           v-model="email"
           class="account-page__input"
+          :class="{ 'account-page__input--invalid': emailError }"
           type="email"
           :readonly="!isEditing"
+          :aria-invalid="!!emailError"
+          @blur="isEditing && validateEmail()"
         />
+
+        <p
+          v-if="emailError"
+          class="account-page__field-error"
+          role="alert"
+        >
+          {{ emailError }}
+        </p>
 
       </div>
 
@@ -124,7 +222,10 @@ onMounted(async () => {
           Phone number:
         </label>
 
-        <div class="account-page__phone-wrapper">
+        <div
+          class="account-page__phone-wrapper"
+          :class="{ 'account-page__phone-wrapper--invalid': phoneNumberError }"
+        >
 
           <!-- Country dropdown -->
           <select
@@ -167,9 +268,19 @@ onMounted(async () => {
             class="account-page__phone-input"
             type="tel"
             :readonly="!isEditing"
+            :aria-invalid="!!phoneNumberError"
+            @blur="isEditing && validatePhoneNumber()"
           />
 
         </div>
+
+        <p
+          v-if="phoneNumberError"
+          class="account-page__field-error"
+          role="alert"
+        >
+          {{ phoneNumberError }}
+        </p>
 
         <p
           v-if="countryLoading"
