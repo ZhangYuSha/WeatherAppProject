@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import './WeatherCard.css'
 
-import { getLocationLabel } from '../../../services/WeatherApi'
+import { getLocationLabel, WeatherIconCode } from '../../../services/WeatherApi'
 
 import mistDayBackground from '../../../assets/Weather/Day/mist.jpg'
 import mistNightBackground from '../../../assets/Weather/Night/mist1.jpeg'
@@ -40,53 +40,53 @@ const router = useRouter()
 const backgroundImage = computed(() => {
   switch (props.icon) {
     // Clear sky
-    case '01d':
+    case WeatherIconCode.ClearDay:
       return sunnyBackground
 
-    case '01n':
+    case WeatherIconCode.ClearNight:
       return nightBackground
 
     // Clouds - Day
-    case '02d':
-    case '03d':
-    case '04d':
+    case WeatherIconCode.FewCloudsDay:
+    case WeatherIconCode.ScatteredCloudsDay:
+    case WeatherIconCode.BrokenCloudsDay:
       return partlyCloudyBackground
 
     // Clouds - Night
-    case '02n':
-    case '03n':
-    case '04n':
+    case WeatherIconCode.FewCloudsNight:
+    case WeatherIconCode.ScatteredCloudsNight:
+    case WeatherIconCode.BrokenCloudsNight:
       return nightBackground
 
     // Rain - Day
-    case '09d':
-    case '10d':
+    case WeatherIconCode.ShowerRainDay:
+    case WeatherIconCode.RainDay:
       return rainDayBackground
 
     // Rain - Night
-    case '09n':
-    case '10n':
+    case WeatherIconCode.ShowerRainNight:
+    case WeatherIconCode.RainNight:
       return rainNightBackground
 
     // Thunderstorm
-    case '11d':
-    case '11n':
+    case WeatherIconCode.ThunderstormDay:
+    case WeatherIconCode.ThunderstormNight:
       return thunderstormBackground
 
     // Snow - Day
-    case '13d':
+    case WeatherIconCode.SnowDay:
       return snowDayBackground
 
     // Snow - Night
-    case '13n':
+    case WeatherIconCode.SnowNight:
       return snowNightBackground
 
     // Mist - Day
-    case '50d':
+    case WeatherIconCode.MistDay:
       return mistDayBackground
 
     // Mist - Night
-    case '50n':
+    case WeatherIconCode.MistNight:
       return mistNightBackground
 
     // Fallback
