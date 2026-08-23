@@ -40,6 +40,32 @@ export interface LocationSuggestion {
   lon: number
 }
 
+// OpenWeatherMap's icon codes, used to pick backgrounds/imagery
+// consistently anywhere in the app (e.g. WeatherCard.vue).
+export const WeatherIconCode = {
+  ClearDay: '01d',
+  ClearNight: '01n',
+  FewCloudsDay: '02d',
+  FewCloudsNight: '02n',
+  ScatteredCloudsDay: '03d',
+  ScatteredCloudsNight: '03n',
+  BrokenCloudsDay: '04d',
+  BrokenCloudsNight: '04n',
+  ShowerRainDay: '09d',
+  ShowerRainNight: '09n',
+  RainDay: '10d',
+  RainNight: '10n',
+  ThunderstormDay: '11d',
+  ThunderstormNight: '11n',
+  SnowDay: '13d',
+  SnowNight: '13n',
+  MistDay: '50d',
+  MistNight: '50n',
+} as const
+
+export type WeatherIconCode =
+  (typeof WeatherIconCode)[keyof typeof WeatherIconCode]
+
 interface OpenWeatherResponse {
   name: string
   sys: {
@@ -78,6 +104,43 @@ interface OpenWeatherForecastResponse {
       icon: string
     }[]
   }[]
+}
+
+interface GeoResponse {
+  name: string
+  country: string
+  state?: string
+  lat: number
+  lon: number
+}
+
+/*
+ * Generic fetch helper shared by every OpenWeatherMap call.
+ * Builds nothing itself — callers pass a fully-formed URL — but
+ * centralizes the fetch, ok-check, and error-message logic that
+ * was previously duplicated across getWeather, getWeatherByCoordinates,
+ * getWeatherForecast, getWeatherForecastByCoordinates, and searchLocations.
+ *
+ * notFoundMessage lets each caller give a context-specific 404 message
+ * (e.g. "City not found." vs "Weather location not found.") while
+ * still sharing one implementation.
+ */
+async function fetchOpenWeather<T>(
+  url: URL,
+  notFoundMessage: string,
+  genericMessage: string
+): Promise<T> {
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(notFoundMessage)
+    }
+
+    throw new Error(genericMessage)
+  }
+
+  return response.json() as Promise<T>
 }
 
 /*
@@ -127,6 +190,75 @@ function formatWeatherData(data: OpenWeatherResponse): WeatherData {
   }
 }
 
+/*
+ * Groups a raw OpenWeatherMap forecast list into hourly and
+ * daily buckets. Shared by both getWeatherForecast and
+ * getWeatherForecastByCoordinates, which previously duplicated
+ * this entire block.
+ */
+function formatForecastData(data: OpenWeatherForecastResponse): {
+  hourly: HourlyForecastData[]
+  daily: DailyForecastData[]
+} {
+  const hourly: HourlyForecastData[] = data.list.map((item) => {
+    const date = new Date(item.dt * 1000)
+
+    return {
+      time: new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(date),
+      temperature: Math.round(item.main.temp),
+      condition: item.weather[0].description,
+      icon: item.weather[0].icon,
+    }
+  })
+
+  const groupedByDay = new Map<string, typeof data.list>()
+
+  data.list.forEach((item) => {
+    const date = new Date(item.dt * 1000)
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+
+    const dayKey = `${year}-${month}-${day}`
+
+    if (!groupedByDay.has(dayKey)) {
+      groupedByDay.set(dayKey, [])
+    }
+
+    groupedByDay.get(dayKey)!.push(item)
+  })
+
+  const daily: DailyForecastData[] = Array.from(
+    groupedByDay.entries()
+  ).map(([dayKey, items]) => {
+    const firstItem = items[0]
+
+    const temperatures = items.map((item) => item.main.temp)
+
+    const high = Math.max(...temperatures)
+    const low = Math.min(...temperatures)
+
+    const date = new Date(`${dayKey}T12:00:00`)
+
+    return {
+      day: new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+      }).format(date),
+      temperature: Math.round(firstItem.main.temp),
+      high: Math.round(high),
+      low: Math.round(low),
+      condition: firstItem.weather[0].description,
+      icon: firstItem.weather[0].icon,
+    }
+  })
+
+  return { hourly, daily }
+}
+
 export async function getWeather(city: string): Promise<WeatherData> {
   const url = new URL(BASE_URL)
 
@@ -134,17 +266,11 @@ export async function getWeather(city: string): Promise<WeatherData> {
   url.searchParams.append('appid', API_KEY)
   url.searchParams.append('units', 'metric')
 
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('City not found.')
-    }
-
-    throw new Error('Unable to fetch weather data.')
-  }
-
-  const data: OpenWeatherResponse = await response.json()
+  const data = await fetchOpenWeather<OpenWeatherResponse>(
+    url,
+    'City not found.',
+    'Unable to fetch weather data.'
+  )
 
   return formatWeatherData(data)
 }
@@ -160,17 +286,11 @@ export async function getWeatherByCoordinates(
   url.searchParams.append('appid', API_KEY)
   url.searchParams.append('units', 'metric')
 
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('Weather location not found.')
-    }
-
-    throw new Error('Unable to fetch weather data.')
-  }
-
-  const data: OpenWeatherResponse = await response.json()
+  const data = await fetchOpenWeather<OpenWeatherResponse>(
+    url,
+    'Weather location not found.',
+    'Unable to fetch weather data.'
+  )
 
   return formatWeatherData(data)
 }
@@ -187,78 +307,13 @@ export async function getWeatherForecast(
   url.searchParams.append('appid', API_KEY)
   url.searchParams.append('units', 'metric')
 
-  const response = await fetch(url)
+  const data = await fetchOpenWeather<OpenWeatherForecastResponse>(
+    url,
+    'City not found.',
+    'Unable to fetch forecast data.'
+  )
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('City not found.')
-    }
-
-    throw new Error('Unable to fetch forecast data.')
-  }
-
-  const data: OpenWeatherForecastResponse = await response.json()
-
-  const hourly: HourlyForecastData[] = data.list.map((item) => {
-    const date = new Date(item.dt * 1000)
-
-    return {
-      time: new Intl.DateTimeFormat('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-      }).format(date),
-      temperature: Math.round(item.main.temp),
-      condition: item.weather[0].description,
-      icon: item.weather[0].icon,
-    }
-  })
-
-  const groupedByDay = new Map<string, typeof data.list>()
-
-  data.list.forEach((item) => {
-    const date = new Date(item.dt * 1000)
-
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-
-    const dayKey = `${year}-${month}-${day}`
-
-    if (!groupedByDay.has(dayKey)) {
-      groupedByDay.set(dayKey, [])
-    }
-
-    groupedByDay.get(dayKey)!.push(item)
-  })
-
-  const daily: DailyForecastData[] = Array.from(
-    groupedByDay.entries()
-  ).map(([dayKey, items]) => {
-    const firstItem = items[0]
-
-    const temperatures = items.map((item) => item.main.temp)
-
-    const high = Math.max(...temperatures)
-    const low = Math.min(...temperatures)
-
-    const date = new Date(`${dayKey}T12:00:00`)
-
-    return {
-      day: new Intl.DateTimeFormat('en-US', {
-        weekday: 'short',
-      }).format(date),
-      temperature: Math.round(firstItem.main.temp),
-      high: Math.round(high),
-      low: Math.round(low),
-      condition: firstItem.weather[0].description,
-      icon: firstItem.weather[0].icon,
-    }
-  })
-
-  return {
-    hourly,
-    daily,
-  }
+  return formatForecastData(data)
 }
 
 export async function getWeatherForecastByCoordinates(
@@ -275,74 +330,13 @@ export async function getWeatherForecastByCoordinates(
   url.searchParams.append('appid', API_KEY)
   url.searchParams.append('units', 'metric')
 
-  const response = await fetch(url)
+  const data = await fetchOpenWeather<OpenWeatherForecastResponse>(
+    url,
+    'Weather location not found.',
+    'Unable to fetch forecast data.'
+  )
 
-  if (!response.ok) {
-    throw new Error('Unable to fetch forecast data.')
-  }
-
-  const data: OpenWeatherForecastResponse = await response.json()
-
-  const hourly: HourlyForecastData[] = data.list.map((item) => {
-    const date = new Date(item.dt * 1000)
-
-    return {
-      time: new Intl.DateTimeFormat('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-      }).format(date),
-      temperature: Math.round(item.main.temp),
-      condition: item.weather[0].description,
-      icon: item.weather[0].icon,
-    }
-  })
-
-  const groupedByDay = new Map<string, typeof data.list>()
-
-  data.list.forEach((item) => {
-    const date = new Date(item.dt * 1000)
-
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-
-    const dayKey = `${year}-${month}-${day}`
-
-    if (!groupedByDay.has(dayKey)) {
-      groupedByDay.set(dayKey, [])
-    }
-
-    groupedByDay.get(dayKey)!.push(item)
-  })
-
-  const daily: DailyForecastData[] = Array.from(
-    groupedByDay.entries()
-  ).map(([dayKey, items]) => {
-    const firstItem = items[0]
-
-    const temperatures = items.map((item) => item.main.temp)
-
-    const high = Math.max(...temperatures)
-    const low = Math.min(...temperatures)
-
-    const date = new Date(`${dayKey}T12:00:00`)
-
-    return {
-      day: new Intl.DateTimeFormat('en-US', {
-        weekday: 'short',
-      }).format(date),
-      temperature: Math.round(firstItem.main.temp),
-      high: Math.round(high),
-      low: Math.round(low),
-      condition: firstItem.weather[0].description,
-      icon: firstItem.weather[0].icon,
-    }
-  })
-
-  return {
-    hourly,
-    daily,
-  }
+  return formatForecastData(data)
 }
 
 export async function searchLocations(
@@ -354,27 +348,17 @@ export async function searchLocations(
   url.searchParams.append('limit', '5')
   url.searchParams.append('appid', API_KEY)
 
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error('Unable to search locations.')
-  }
-
-  const data = await response.json()
-
-  return data.map(
-    (item: {
-      name: string
-      country: string
-      state?: string
-      lat: number
-      lon: number
-    }) => ({
-      name: item.name,
-      country: item.country,
-      state: item.state,
-      lat: item.lat,
-      lon: item.lon,
-    })
+  const data = await fetchOpenWeather<GeoResponse[]>(
+    url,
+    'Location not found.',
+    'Unable to search locations.'
   )
+
+  return data.map((item) => ({
+    name: item.name,
+    country: item.country,
+    state: item.state,
+    lat: item.lat,
+    lon: item.lon,
+  }))
 }
