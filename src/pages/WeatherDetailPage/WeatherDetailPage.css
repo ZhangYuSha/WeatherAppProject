@@ -198,6 +198,7 @@
 }
 
 .weather-detail-page__day {
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   width: 100%;
   min-height: 72px;
   box-sizing: border-box;
@@ -206,7 +207,8 @@
   align-items: center;
   padding: 12px 20px;
   border-radius: 14px;
-  background: #f2f2f2;
+  background: #D2DFFF;
+  color: #201C1C;
   text-align: left;
 }
 
@@ -215,6 +217,11 @@
   height: 48px;
   grid-row: 1;
   align-self: center;
+  border-radius: 50%;
+  background: #9AB6FF; /* Blue background for contrast against #D2DFFF */
+  padding: 6px;        /* Adjusts icon size inside the circle */
+  box-sizing: border-box;
+  object-fit: contain;
 }
 
 .weather-detail-page__day-info {
@@ -234,14 +241,18 @@
 }
 
 .weather-detail-page__day-condition {
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   font-size: 14px;
-  color: #666;
   text-transform: capitalize;
   text-align: left;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #201C1C;
 }
 
 .weather-detail-page__day-temperature {
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0 16px 0 0;
   font-size: 20px;
   font-weight: 600;
