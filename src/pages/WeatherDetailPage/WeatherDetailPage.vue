@@ -200,7 +200,7 @@ onMounted(() => {
         />
 
         <p class="weather-detail-page__temperature">
-          {{ weather.temperature }}°
+          {{ weather.temperature }}° C
         </p>
 
         <p class="weather-detail-page__condition">
