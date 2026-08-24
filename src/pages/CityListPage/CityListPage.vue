@@ -9,95 +9,34 @@ import WeatherCard from '../../components/organisms/WeatherCard/WeatherCard.vue'
 
 import profilePicture from '../../assets/Account/profile-user-account.svg'
 
-import {
-  getWeatherByCoordinates,
-  getLocationLabel,
-} from '../../services/WeatherApi'
+import { useSavedCities } from '../../composables/useSavedCities'
+
+import { getWeatherByCoordinates } from '../../services/WeatherApi'
 
 import type {
   WeatherData,
   LocationSuggestion,
 } from '../../services/WeatherApi'
 
-interface SavedCity {
-  name: string
-  country: string
-  latitude: number
-  longitude: number
-}
-
 const router = useRouter()
 
 const searchQuery = ref('')
 
 const currentLocationWeather = ref<WeatherData | null>(null)
-const weather = ref<WeatherData[]>([])
-
-const loading = ref(false)
 const locationLoading = ref(false)
-
-const errorMessage = ref('')
 const locationErrorMessage = ref('')
 
-function getSavedCities(): SavedCity[] {
-  const saved = localStorage.getItem('savedCities')
+// Shared reactive state — the same savedCities/weatherByCity refs
+// are used by WeatherDetailPage, so saving/deleting a city there
+// is reflected here automatically without a route change or refetch.
+const {
+  savedCities,
+  weatherByCity,
+  loading,
+  errorMessage,
+  refreshWeatherForSavedCities,
+} = useSavedCities()
 
-  if (!saved) {
-    return []
-  }
-
-  try {
-    return JSON.parse(saved)
-  } catch {
-    return []
-  }
-}
-
-async function loadSavedCities() {
-  const savedCities = getSavedCities()
-
-  if (savedCities.length === 0) {
-    weather.value = []
-    return
-  }
-
-  loading.value = true
-  errorMessage.value = ''
-
-  try {
-    const results = await Promise.all(
-      savedCities.map((saved) =>
-        getWeatherByCoordinates(
-          saved.latitude,
-          saved.longitude
-        ).catch(() => null)
-      )
-    )
-
-    weather.value = results.filter(
-      (result): result is WeatherData => result !== null
-    )
-  } catch (error) {
-    errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : 'Unable to load saved cities.'
-  } finally {
-    loading.value = false
-  }
-}
-
-/*
- * Selecting a city from SearchBar
- * only opens the detail page.
- *
- * It does NOT save the city.
- *
- * The city param includes the country (and state, if any)
- * so cities that share a name (e.g. London, UK vs
- * London, Canada) stay distinguishable everywhere they're
- * displayed.
- */
 function selectLocation(location: LocationSuggestion) {
   const label = getLocationLabel(
     location.name,
@@ -116,6 +55,10 @@ function selectLocation(location: LocationSuggestion) {
     },
   })
 }
+
+// Kept local: getLocationLabel is a pure formatting helper already
+// exported from WeatherApi, re-imported here for use in selectLocation.
+import { getLocationLabel } from '../../services/WeatherApi'
 
 function getCurrentLocation() {
   if (!navigator.geolocation) {
@@ -176,7 +119,7 @@ function openAccount() {
 
 onMounted(() => {
   getCurrentLocation()
-  loadSavedCities()
+  refreshWeatherForSavedCities()
 })
 </script>
 
@@ -257,11 +200,11 @@ onMounted(() => {
 
     <!-- Saved Cities -->
     <section
-      v-if="!loading && weather.length > 0"
+      v-if="!loading && weatherByCity.length > 0"
       class="city-list-page__cards"
     >
       <WeatherCard
-        v-for="item in weather"
+        v-for="item in weatherByCity"
         :key="`${item.latitude}-${item.longitude}`"
         :city="item.city"
         :country="item.country"

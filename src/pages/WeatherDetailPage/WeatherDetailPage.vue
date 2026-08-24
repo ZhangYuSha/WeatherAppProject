@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 import './WeatherDetailPage.css'
 
 import PageWithBackButton from '../../components/templates/PageWithBackButton/PageWithBackButton.vue'
+
+import { useSavedCities } from '../../composables/useSavedCities'
 
 import {
   getWeather,
@@ -19,15 +21,7 @@ import type {
   DailyForecastData,
 } from '../../services/WeatherApi'
 
-interface SavedCity {
-  name: string
-  country: string
-  latitude: number
-  longitude: number
-}
-
 const route = useRoute()
-const router = useRouter()
 
 // The city param already includes country (and state, if any)
 // when navigating from WeatherCard or SearchBar, e.g.
@@ -51,92 +45,36 @@ const loading = ref(false)
 const errorMessage = ref('')
 const lastUpdated = ref('')
 
-const isSaved = ref(false)
+// Shared reactive state — the same savedCities ref used by
+// CityListPage. Saving/deleting a city here updates that page's
+// list immediately, with no route change or refetch required.
+const { isCitySaved, saveCity, deleteCity } = useSavedCities()
 
-function getSavedCities(): SavedCity[] {
-  const saved = localStorage.getItem('savedCities')
+// isSaved is now derived from the shared savedCities state, rather
+// than tracked as its own local copy that needs manual syncing.
+const isSaved = computed(() =>
+  hasCoordinates ? isCitySaved(latitude, longitude) : false
+)
 
-  if (!saved) {
-    return []
-  }
-
-  try {
-    return JSON.parse(saved)
-  } catch {
-    return []
-  }
-}
-
-/*
- * Two coordinates are treated as the same place if they're
- * within ~1km of each other, to tolerate tiny float differences
- * between requests for the same city.
- */
-function isSameCity(saved: SavedCity): boolean {
-  if (!hasCoordinates) {
-    return false
-  }
-
-  return (
-    Math.abs(saved.latitude - latitude) < 0.01 &&
-    Math.abs(saved.longitude - longitude) < 0.01
-  )
-}
-
-function checkIfSaved() {
-  if (!hasCoordinates) {
-    isSaved.value = false
-    return
-  }
-
-  isSaved.value = getSavedCities().some(isSameCity)
-}
-
-function saveCity() {
+function handleSaveCity() {
   if (!hasCoordinates) {
     return
   }
 
-  const savedCities = getSavedCities()
-  const alreadySaved = savedCities.some(isSameCity)
-
-  if (!alreadySaved) {
-    savedCities.push({
-      name: city,
-      country: weather.value?.country ?? '',
-      latitude,
-      longitude,
-    })
-
-    localStorage.setItem(
-      'savedCities',
-      JSON.stringify(savedCities)
-    )
-  }
-
-  isSaved.value = true
-
-  router.push('/')
+  saveCity({
+    name: city,
+    country: weather.value?.country ?? '',
+    latitude,
+    longitude,
+  })
 }
 
-function deleteCity() {
+function handleDeleteCity() {
   if (!hasCoordinates) {
     return
   }
 
-  const savedCities = getSavedCities()
-  const updatedCities = savedCities.filter(
-    (saved) => !isSameCity(saved)
-  )
-
-  localStorage.setItem(
-    'savedCities',
-    JSON.stringify(updatedCities)
-  )
-
-  isSaved.value = false
-
-  router.push('/')
+  deleteCity(latitude, longitude)
 }
 
 async function loadWeather() {
@@ -189,7 +127,6 @@ async function refreshWeather() {
 }
 
 onMounted(() => {
-  checkIfSaved()
   loadWeather()
 })
 </script>
@@ -202,7 +139,7 @@ onMounted(() => {
         class="weather-detail-page__delete"
         type="button"
         aria-label="Add city"
-        @click="saveCity"
+        @click="handleSaveCity"
       >
         +
       </button>
@@ -212,7 +149,7 @@ onMounted(() => {
         class="weather-detail-page__delete"
         type="button"
         aria-label="Delete city"
-        @click="deleteCity"
+        @click="handleDeleteCity"
       >
         🗑
       </button>
