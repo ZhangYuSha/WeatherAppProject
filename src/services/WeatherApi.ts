@@ -16,20 +16,25 @@ export interface WeatherData {
   longitude: number
 }
 
-export interface HourlyForecastData {
-  time: string
+export interface DetailedForecastItem {
+  title: string
   temperature: number
   condition: string
   icon: string
+  humidity: number
+  windSpeed: number
+  pop: number
+  high?: number
+  low?: number
+  suggestions: string[]
 }
 
-export interface DailyForecastData {
+export interface HourlyForecastData extends DetailedForecastItem {
+  time: string
+}
+
+export interface DailyForecastData extends DetailedForecastItem {
   day: string
-  temperature: number
-  high: number
-  low: number
-  condition: string
-  icon: string
 }
 
 export interface LocationSuggestion {
@@ -40,8 +45,6 @@ export interface LocationSuggestion {
   lon: number
 }
 
-// OpenWeatherMap's icon codes, used to pick backgrounds/imagery
-// consistently anywhere in the app (e.g. WeatherCard.vue).
 export const WeatherIconCode = {
   ClearDay: '01d',
   ClearNight: '01n',
@@ -93,10 +96,15 @@ interface OpenWeatherForecastResponse {
   }
   list: {
     dt: number
+    pop: number
     main: {
       temp: number
       temp_max: number
       temp_min: number
+      humidity: number
+    }
+    wind: {
+      speed: number
     }
     weather: {
       main: string
@@ -114,17 +122,6 @@ interface GeoResponse {
   lon: number
 }
 
-/*
- * Generic fetch helper shared by every OpenWeatherMap call.
- * Builds nothing itself — callers pass a fully-formed URL — but
- * centralizes the fetch, ok-check, and error-message logic that
- * was previously duplicated across getWeather, getWeatherByCoordinates,
- * getWeatherForecast, getWeatherForecastByCoordinates, and searchLocations.
- *
- * notFoundMessage lets each caller give a context-specific 404 message
- * (e.g. "City not found." vs "Weather location not found.") while
- * still sharing one implementation.
- */
 async function fetchOpenWeather<T>(
   url: URL,
   notFoundMessage: string,
@@ -143,11 +140,6 @@ async function fetchOpenWeather<T>(
   return response.json() as Promise<T>
 }
 
-/*
- * Convert a country code (e.g. "GB") into a readable
- * country name (e.g. "United Kingdom"). Falls back to
- * the raw code if the environment can't resolve it.
- */
 export function getCountryName(countryCode: string): string {
   try {
     const displayNames = new Intl.DisplayNames(['en'], {
@@ -160,18 +152,12 @@ export function getCountryName(countryCode: string): string {
   }
 }
 
-/*
- * Build a disambiguated location label, e.g.
- * "London, United Kingdom" or "London, Ontario, Canada".
- */
 export function getLocationLabel(
   name: string,
   countryCode: string,
   state?: string
 ): string {
-  const parts = [name, state, getCountryName(countryCode)].filter(
-    Boolean
-  )
+  const parts = [name, state, getCountryName(countryCode)].filter(Boolean)
 
   return parts.join(', ')
 }
@@ -190,27 +176,73 @@ function formatWeatherData(data: OpenWeatherResponse): WeatherData {
   }
 }
 
-/*
- * Groups a raw OpenWeatherMap forecast list into hourly and
- * daily buckets. Shared by both getWeatherForecast and
- * getWeatherForecastByCoordinates, which previously duplicated
- * this entire block.
- */
+function generateSuggestions(
+  condition: string,
+  temp: number,
+  pop: number,
+  windSpeed: number
+): string[] {
+  const suggestions: string[] = []
+  const lowerCondition = condition.toLowerCase()
+
+  if (pop >= 30 || lowerCondition.includes('rain') || lowerCondition.includes('drizzle')) {
+    suggestions.push('Bring an umbrella or raincoat')
+  }
+  if (lowerCondition.includes('snow')) {
+    suggestions.push('Wear insulated waterproof boots and a heavy winter coat')
+  }
+  if (temp <= 10) {
+    suggestions.push('Wear a heavy coat, gloves, and a warm hat')
+  } else if (temp > 10 && temp <= 18) {
+    suggestions.push('A light jacket, hoodie, or sweater is recommended')
+  } else if (temp >= 28) {
+    suggestions.push('Wear light, breathable clothing and apply sunscreen')
+  }
+  if (windSpeed >= 20) {
+    suggestions.push('Windy conditions expected; secure hats and loose items')
+  }
+  if (pop < 20 && temp > 18 && temp < 28 && windSpeed < 20) {
+    suggestions.push('Conditions look great for outdoor activities')
+  }
+
+  // Trigger sunscreen for clear/sunny weather OR hot temperatures (>= 25°C)
+  const isSunny = lowerCondition.includes('clear') || lowerCondition.includes('sun')
+  if (isSunny || temp >= 25) {
+    suggestions.push('Apply sunscreen and wear sunglasses')
+  }
+  
+  return suggestions
+}
+
 function formatForecastData(data: OpenWeatherForecastResponse): {
   hourly: HourlyForecastData[]
   daily: DailyForecastData[]
 } {
   const hourly: HourlyForecastData[] = data.list.map((item) => {
     const date = new Date(item.dt * 1000)
+    const timeFormatted = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date)
+
+    const popPercent = Math.round((item.pop || 0) * 100)
+    const windKmh = Math.round(item.wind.speed * 3.6)
 
     return {
-      time: new Intl.DateTimeFormat('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-      }).format(date),
+      title: timeFormatted,
+      time: timeFormatted,
       temperature: Math.round(item.main.temp),
       condition: item.weather[0].description,
       icon: item.weather[0].icon,
+      humidity: item.main.humidity,
+      windSpeed: windKmh,
+      pop: popPercent,
+      suggestions: generateSuggestions(
+        item.weather[0].description,
+        item.main.temp,
+        popPercent,
+        windKmh
+      ),
     }
   })
 
@@ -232,29 +264,44 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
     groupedByDay.get(dayKey)!.push(item)
   })
 
-  const daily: DailyForecastData[] = Array.from(
-    groupedByDay.entries()
-  ).map(([dayKey, items]) => {
-    const firstItem = items[0]
+  const daily: DailyForecastData[] = Array.from(groupedByDay.entries()).map(
+    ([dayKey, items]) => {
+      const firstItem = items[0]
+      const temps = items.map((item) => item.main.temp)
+      const maxPop = Math.max(...items.map((item) => item.pop || 0))
+      const maxWind = Math.max(...items.map((item) => item.wind.speed))
+      const avgHumidity = Math.round(
+        items.reduce((acc, item) => acc + item.main.humidity, 0) / items.length
+      )
 
-    const temperatures = items.map((item) => item.main.temp)
-
-    const high = Math.max(...temperatures)
-    const low = Math.min(...temperatures)
-
-    const date = new Date(`${dayKey}T12:00:00`)
-
-    return {
-      day: new Intl.DateTimeFormat('en-US', {
+      const date = new Date(`${dayKey}T12:00:00`)
+      const dayName = new Intl.DateTimeFormat('en-US', {
         weekday: 'short',
-      }).format(date),
-      temperature: Math.round(firstItem.main.temp),
-      high: Math.round(high),
-      low: Math.round(low),
-      condition: firstItem.weather[0].description,
-      icon: firstItem.weather[0].icon,
+      }).format(date)
+
+      const popPercent = Math.round(maxPop * 100)
+      const windKmh = Math.round(maxWind * 3.6)
+
+      return {
+        title: dayName,
+        day: dayName,
+        temperature: Math.round(firstItem.main.temp),
+        high: Math.round(Math.max(...temps)),
+        low: Math.round(Math.min(...temps)),
+        condition: firstItem.weather[0].description,
+        icon: firstItem.weather[0].icon,
+        humidity: avgHumidity,
+        windSpeed: windKmh,
+        pop: popPercent,
+        suggestions: generateSuggestions(
+          firstItem.weather[0].description,
+          firstItem.main.temp,
+          popPercent,
+          windKmh
+        ),
+      }
     }
-  })
+  )
 
   return { hourly, daily }
 }

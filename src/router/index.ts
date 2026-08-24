@@ -28,6 +28,12 @@ const router = createRouter({
       component: () =>
         import('../pages/WeatherDetailPage/WeatherDetailPage.vue'),
     },
+    {
+      path: '/weather/:city/forecast-detail',
+      name: 'forecast-detail',
+      component: () =>
+        import('../pages/ForecastDetailPage/ForecastDetailPage.vue'),
+    },
   ],
 })
 
