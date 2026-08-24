@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 import './WeatherDetailPage.css'
 
 import PageWithBackButton from '../../components/templates/PageWithBackButton/PageWithBackButton.vue'
-
 import { useSavedCities } from '../../composables/useSavedCities'
 
 import {
@@ -26,11 +25,13 @@ const route = useRoute()
 const router = useRouter()
 
 const city = String(route.params.city)
-
 const latitude = Number(route.query.lat)
 const longitude = Number(route.query.lon)
-const hasCoordinates =
-  !Number.isNaN(latitude) && !Number.isNaN(longitude)
+const hasCoordinates = !Number.isNaN(latitude) && !Number.isNaN(longitude)
+
+const isMyLocation = computed(
+  () => city.toLowerCase() === 'my location' || route.query.isCurrentLocation === 'true'
+)
 
 const weather = ref<WeatherData | null>(null)
 const hourlyForecast = ref<HourlyForecastData[]>([])
@@ -51,9 +52,11 @@ const formattedDate = computed(() =>
 
 const { isCitySaved, saveCity, deleteCity } = useSavedCities()
 
-const isSaved = computed(() =>
-  hasCoordinates ? isCitySaved(latitude, longitude) : false
-)
+// Force My Location to return true so the trashcan (🗑) button renders
+const isSaved = computed(() => {
+  if (isMyLocation.value) return true
+  return hasCoordinates ? isCitySaved(latitude, longitude) : false
+})
 
 function handleSaveCity() {
   if (!hasCoordinates) return
@@ -63,13 +66,13 @@ function handleSaveCity() {
     country: weather.value?.country ?? '',
     latitude,
     longitude,
+    isMyLocation: isMyLocation.value,
   })
 }
 
 function handleDeleteCity() {
-  if (!hasCoordinates) return
-
-  deleteCity(latitude, longitude)
+  deleteCity(latitude, longitude, isMyLocation.value)
+  router.back()
 }
 
 function openForecastDetail(item: DetailedForecastItem) {

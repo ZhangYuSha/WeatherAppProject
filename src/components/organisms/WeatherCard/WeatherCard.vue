@@ -110,9 +110,11 @@ function openWeatherDetail() {
     query: {
       lat: props.latitude.toString(),
       lon: props.longitude.toString(),
+      isCurrentLocation: props.isCurrentLocation ? 'true' : undefined,
     },
   })
 }
+
 </script>
 
 <template>
