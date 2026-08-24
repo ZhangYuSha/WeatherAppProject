@@ -1,0 +1,25 @@
+:root {
+  /* Colors — estimated from Figma screenshots, verify against
+     live prototype and adjust if you get exact values later */
+  --color-card-overlay-day: #1e3a5f;
+  --color-card-overlay-night: #1a1a1a;
+  --color-hero-blue: #3f5fa8;
+  --color-button-primary: #232c47;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-text-muted: #8a8a8a;
+  --color-error: #c0392b;
+  --color-border: #d5d5d5;
+  --color-surface: #f7f7f7;
+  --color-surface-alt: #f2f2f2;
+  --color-forecast-chip: #e4eaf7;
+
+  /* Fonts */
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+
+  /* Shape */
+  --radius-card: 16px;
+  --radius-chip: 999px;
+}
