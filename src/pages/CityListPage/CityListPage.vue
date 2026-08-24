@@ -11,7 +11,10 @@ import profilePicture from '../../assets/Account/profile-user-account.svg'
 
 import { useSavedCities } from '../../composables/useSavedCities'
 
-import { getWeatherByCoordinates } from '../../services/WeatherApi'
+import {
+  getWeatherByCoordinates,
+  getLocationLabel,
+} from '../../services/WeatherApi'
 
 import type {
   WeatherData,
@@ -26,11 +29,11 @@ const currentLocationWeather = ref<WeatherData | null>(null)
 const locationLoading = ref(false)
 const locationErrorMessage = ref('')
 
-// Shared reactive state — the same savedCities/weatherByCity refs
-// are used by WeatherDetailPage, so saving/deleting a city there
-// is reflected here automatically without a route change or refetch.
+// Shared reactive state — the same weatherByCity/loading/errorMessage
+// refs are used by WeatherDetailPage via useSavedCities, so saving/
+// deleting a city there is reflected here automatically without a
+// route change or refetch.
 const {
-  savedCities,
   weatherByCity,
   loading,
   errorMessage,
@@ -55,10 +58,6 @@ function selectLocation(location: LocationSuggestion) {
     },
   })
 }
-
-// Kept local: getLocationLabel is a pure formatting helper already
-// exported from WeatherApi, re-imported here for use in selectLocation.
-import { getLocationLabel } from '../../services/WeatherApi'
 
 function getCurrentLocation() {
   if (!navigator.geolocation) {
