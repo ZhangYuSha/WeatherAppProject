@@ -45,12 +45,26 @@ const loading = ref(false)
 const errorMessage = ref('')
 const lastUpdated = ref('')
 
+// Computed rather than called inline in the template — the
+// previous inline `new Intl.DateTimeFormat(...).format(new Date())`
+// re-ran a full date-formatting pass on every re-render of this
+// component, even for re-renders unrelated to the date itself
+// (e.g. lastUpdated changing after a refresh).
+const formattedDate = computed(() =>
+  new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+)
+
 // Shared reactive state — the same savedCities ref used by
 // CityListPage. Saving/deleting a city here updates that page's
 // list immediately, with no route change or refetch required.
 const { isCitySaved, saveCity, deleteCity } = useSavedCities()
 
-// isSaved is now derived from the shared savedCities state, rather
+// isSaved is derived from the shared savedCities state, rather
 // than tracked as its own local copy that needs manual syncing.
 const isSaved = computed(() =>
   hasCoordinates ? isCitySaved(latitude, longitude) : false
@@ -175,14 +189,7 @@ onMounted(() => {
       class="weather-detail-page__main"
     >
       <p class="weather-detail-page__date">
-        {{
-          new Intl.DateTimeFormat('en-US', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          }).format(new Date())
-        }}
+        {{ formattedDate }}
       </p>
 
       <img
@@ -229,6 +236,7 @@ onMounted(() => {
               class="weather-detail-page__hour-icon"
               :src="`https://openweathermap.org/img/wn/${item.icon}.png`"
               :alt="item.condition"
+              loading="lazy"
             />
 
             <p class="weather-detail-page__hour-temperature">
@@ -257,6 +265,7 @@ onMounted(() => {
               class="weather-detail-page__day-icon"
               :src="`https://openweathermap.org/img/wn/${item.icon}.png`"
               :alt="item.condition"
+              loading="lazy"
             />
 
             <div class="weather-detail-page__day-info">
