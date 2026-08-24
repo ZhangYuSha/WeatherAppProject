@@ -357,6 +357,7 @@ onMounted(() => {
             :aria-label="`Hourly forecast for ${item.time}`"
             @click="openForecastDetail(item)"
             @keydown.enter="openForecastDetail(item)"
+            @keydown.space.prevent="openForecastDetail(item)"
           >
             <img
               class="weather-detail-page__hour-icon"
@@ -393,6 +394,7 @@ onMounted(() => {
             :aria-label="`Daily forecast for ${item.day}`"
             @click="openForecastDetail(item)"
             @keydown.enter="openForecastDetail(item)"
+            @keydown.space.prevent="openForecastDetail(item)"
           >
             <img
               class="weather-detail-page__day-icon"
