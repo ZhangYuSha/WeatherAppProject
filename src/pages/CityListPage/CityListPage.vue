@@ -25,10 +25,14 @@ const router = useRouter()
 
 const searchQuery = ref('')
 
+// Weather for the device's geolocated position, kept separate from
+// weatherByCity (saved cities) since it comes from a different source
+// (browser geolocation + a one-off fetch) and has its own loading/error state
 const currentLocationWeather = ref<WeatherData | null>(null)
 const locationLoading = ref(false)
 const locationErrorMessage = ref('')
 
+// Shared saved-cities state/actions from the composable (see useSavedCities)
 const {
   weatherByCity,
   loading,
@@ -38,6 +42,9 @@ const {
   isCurrentLocationDeleted,
 } = useSavedCities()
 
+// Navigates to the detail page for a location picked from search results.
+// Unlike saved/current-location cards, this doesn't go through the
+// saved-cities store at all, it's a direct lookup, not a persisted city.
 function selectLocation(location: LocationSuggestion) {
   const label = getLocationLabel(
     location.name,
@@ -57,6 +64,9 @@ function selectLocation(location: LocationSuggestion) {
   })
 }
 
+// Requests the browser's geolocation, then fetches weather for those
+// coordinates. Handles both the "unsupported API" case and the two
+// callback-based outcomes (success/error) of getCurrentPosition.
 function getCurrentLocation() {
   if (!navigator.geolocation) {
     locationErrorMessage.value =
@@ -97,6 +107,9 @@ function getCurrentLocation() {
       }
     },
 
+    // Geolocation error callback — distinguishes a denied permission
+    // from other failures (timeout, position unavailable, etc.) so the
+    // user gets a more actionable message when it's a permissions issue
     (error) => {
       locationLoading.value = false
 
@@ -112,6 +125,8 @@ function getCurrentLocation() {
     {
       enableHighAccuracy: true,
       timeout: 10000,
+      // Accept a cached position up to 5 minutes old rather than
+      // forcing a fresh GPS fix on every page load
       maximumAge: 300000,
     }
   )
@@ -121,6 +136,9 @@ function openAccount() {
   router.push('/account')
 }
 
+// Kick off both data sources in parallel on mount: the device's
+// current-location weather and the saved-cities weather. Neither
+// awaits the other since they're independent.
 onMounted(() => {
   getCurrentLocation()
   refreshWeatherForSavedCities()

@@ -4,6 +4,8 @@ const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 const FORECAST_URL = 'https://api.openweathermap.org/data/2.5/forecast'
 const GEO_URL = 'https://api.openweathermap.org/geo/1.0/direct'
 
+// Normalized "current weather" shape used throughout the app (cards,
+// detail page), decoupled from OpenWeather's raw response structure
 export interface WeatherData {
   city: string
   country: string
@@ -16,6 +18,10 @@ export interface WeatherData {
   longitude: number
 }
 
+// Common fields shared by a single forecast entry, whether that's one
+// hour or one day. The optional Min/Avg/Max fields are only populated
+// for daily forecasts (see DailyForecastData below), since a daily
+// entry aggregates multiple 3-hourly readings into a range.
 export interface DetailedForecastItem {
   title: string
   temperature: number
@@ -38,10 +44,14 @@ export interface DetailedForecastItem {
   suggestions: string[]
 }
 
+// A single 3-hour forecast slot (OpenWeather's forecast API granularity)
 export interface HourlyForecastData extends DetailedForecastItem {
   time: string
 }
 
+// A day's forecast, built by aggregating all of that day's hourly slots.
+// Unlike the base interface, the Min/Avg/Max fields are required here
+// since every daily entry is always derived from multiple readings.
 export interface DailyForecastData extends DetailedForecastItem {
   day: string
   popMin: number
@@ -55,6 +65,7 @@ export interface DailyForecastData extends DetailedForecastItem {
   windSpeedMax: number
 }
 
+// A single result from the geocoding search (city autocomplete)
 export interface LocationSuggestion {
   name: string
   country: string
@@ -63,6 +74,8 @@ export interface LocationSuggestion {
   lon: number
 }
 
+// OpenWeather's icon codes, named for readability at call sites
+// (e.g. WeatherIconCode.ClearDay instead of the bare string '01d')
 export const WeatherIconCode = {
   ClearDay: '01d',
   ClearNight: '01n',
@@ -87,6 +100,8 @@ export const WeatherIconCode = {
 export type WeatherIconCode =
   (typeof WeatherIconCode)[keyof typeof WeatherIconCode]
 
+// Raw shape of OpenWeather's "current weather" endpoint response
+// (only the fields this app actually consumes)
 interface OpenWeatherResponse {
   name: string
   sys: {
@@ -108,6 +123,9 @@ interface OpenWeatherResponse {
   }[]
 }
 
+// Raw shape of OpenWeather's 5-day/3-hour forecast endpoint response.
+// `list` is a flat array of 3-hour slots; day grouping happens later
+// in formatForecastData, not in this type.
 interface OpenWeatherForecastResponse {
   city: {
     name: string
@@ -132,6 +150,7 @@ interface OpenWeatherForecastResponse {
   }[]
 }
 
+// Raw shape of a single result from OpenWeather's geocoding endpoint
 interface GeoResponse {
   name: string
   country: string
@@ -140,6 +159,9 @@ interface GeoResponse {
   lon: number
 }
 
+// Shared fetch wrapper for all OpenWeather calls. Distinguishes a 404
+// (treated as "not found", shown to the user) from any other failure
+// (treated as a generic error), since the two warrant different messaging.
 async function fetchOpenWeather<T>(
   url: URL,
   notFoundMessage: string,
@@ -158,6 +180,8 @@ async function fetchOpenWeather<T>(
   return response.json() as Promise<T>
 }
 
+// Expands an ISO country code into its full English name via Intl,
+// falling back to the raw code if the runtime can't resolve it
 export function getCountryName(countryCode: string): string {
   try {
     const displayNames = new Intl.DisplayNames(['en'], {
@@ -170,6 +194,8 @@ export function getCountryName(countryCode: string): string {
   }
 }
 
+// Builds a "City, State, Country" display label, omitting any part
+// that's missing (e.g. no state for most non-US/CA locations)
 export function getLocationLabel(
   name: string,
   countryCode: string,
@@ -180,6 +206,8 @@ export function getLocationLabel(
   return parts.join(', ')
 }
 
+// Maps OpenWeather's current-weather response onto this app's
+// normalized WeatherData shape, rounding temps to whole degrees
 function formatWeatherData(data: OpenWeatherResponse): WeatherData {
   return {
     city: data.name,
@@ -194,6 +222,10 @@ function formatWeatherData(data: OpenWeatherResponse): WeatherData {
   }
 }
 
+// Generates plain-language "what to prepare" tips from raw weather
+// metrics. Rules are additive (multiple suggestions can apply at once,
+// e.g. rain + cold) and independent of each other rather than mutually
+// exclusive branches, so the order below is just presentation order.
 function generateSuggestions(
   condition: string,
   temp: number,
@@ -211,6 +243,8 @@ function generateSuggestions(
     suggestions.push('Wear insulated waterproof boots and a heavy winter coat')
   }
 
+  // Temperature bands are mutually exclusive (only one applies),
+  // unlike the other checks in this function
   if (temp <= 10) {
     suggestions.push('Wear a heavy coat, gloves, and a warm hat')
   } else if (temp > 10 && temp <= 18) {
@@ -228,6 +262,8 @@ function generateSuggestions(
     suggestions.push('Apply sunscreen and wear sunglasses')
   }
 
+  // "Great weather" tip only fires when every condition is comfortable —
+  // low rain chance, mild temp, and calm wind all at once
   if (pop < 20 && temp > 18 && temp < 28 && windSpeed < 20) {
     suggestions.push('Great weather for outdoor activities!')
   }
@@ -235,6 +271,10 @@ function generateSuggestions(
   return suggestions
 }
 
+// Transforms OpenWeather's flat 3-hourly forecast list into two views:
+// - hourly: each raw slot mapped 1:1 into HourlyForecastData
+// - daily: slots grouped by calendar day and aggregated into
+//   min/avg/max ranges per metric, for the weekly forecast summary
 function formatForecastData(data: OpenWeatherForecastResponse): {
   hourly: HourlyForecastData[]
   daily: DailyForecastData[]
@@ -267,6 +307,8 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
     }
   })
 
+  // Bucket every 3-hourly slot into its calendar day (local time),
+  // using a "YYYY-MM-DD" string key so days sort/group correctly
   const groupedByDay = new Map<string, typeof data.list>()
 
   data.list.forEach((item) => {
@@ -287,6 +329,9 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
 
   const daily: DailyForecastData[] = Array.from(groupedByDay.entries()).map(
     ([dayKey, items]) => {
+      // Used for display fields (icon, condition, base temperature)
+      // that don't make sense to average — just take the first
+      // reading of the day as representative
       const firstItem = items[0]
       const temps = items.map((item) => item.main.temp)
 
@@ -312,6 +357,9 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
         windList.reduce((acc, val) => acc + val, 0) / windList.length
       )
 
+      // Reconstruct a Date at noon for this day (rather than midnight)
+      // purely to get a stable, unambiguous weekday name regardless of
+      // timezone rounding edge cases
       const date = new Date(`${dayKey}T12:00:00`)
       const dayName = new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
@@ -329,6 +377,10 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
         humidityMin,
         humidityAvg,
         humidityMax,
+        // Note: windSpeed/pop use Max here (worst case for the day)
+        // while humidity uses Avg — an intentional asymmetry, since
+        // "peak wind/rain risk" is more useful to surface than an
+        // average, but "average humidity" is more representative
         windSpeed: windSpeedMax,
         windSpeedMin,
         windSpeedAvg,
@@ -350,6 +402,8 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
   return { hourly, daily }
 }
 
+// Fetches current weather by city name (used when no coordinates are
+// available, e.g. a bookmarked/shared URL with just a city param)
 export async function getWeather(city: string): Promise<WeatherData> {
   const url = new URL(BASE_URL)
 
@@ -366,6 +420,8 @@ export async function getWeather(city: string): Promise<WeatherData> {
   return formatWeatherData(data)
 }
 
+// Fetches current weather by coordinates (used for search results,
+// saved cities, and the device's geolocated position)
 export async function getWeatherByCoordinates(
   latitude: number,
   longitude: number
@@ -386,6 +442,7 @@ export async function getWeatherByCoordinates(
   return formatWeatherData(data)
 }
 
+// Fetches and formats the hourly/daily forecast for a city name
 export async function getWeatherForecast(
   city: string
 ): Promise<{
@@ -407,6 +464,7 @@ export async function getWeatherForecast(
   return formatForecastData(data)
 }
 
+// Fetches and formats the hourly/daily forecast by coordinates
 export async function getWeatherForecastByCoordinates(
   latitude: number,
   longitude: number
@@ -430,6 +488,8 @@ export async function getWeatherForecastByCoordinates(
   return formatForecastData(data)
 }
 
+// Geocoding search used by SearchBar's autocomplete — turns a free-text
+// query into up to 5 candidate locations with coordinates
 export async function searchLocations(
   query: string
 ): Promise<LocationSuggestion[]> {

@@ -4,10 +4,10 @@ import './PageWithBackButton.css'
 
 // Page-level layout template: back button + title + optional
 // right-side action, with the page's own content passed in via
-// the default slot. No business logic lives here.
+// the default slot.
 //
 // Callers should pass their own page class (e.g. class="account-page")
-// on the component itself — Vue's automatic attribute fallthrough
+// on the component itself, Vue's automatic attribute fallthrough
 // merges it onto this component's root <main>, which preserves each
 // page's own shell styling (padding, min-height) and lets header
 // sizing be overridden per page via CSS custom properties
@@ -18,6 +18,9 @@ defineProps<{
 
 const router = useRouter()
 
+// Uses browser/router history rather than a fixed route, so this
+// component stays reusable across pages without knowing where
+// each one was navigated from
 function goBack() {
   router.back()
 }

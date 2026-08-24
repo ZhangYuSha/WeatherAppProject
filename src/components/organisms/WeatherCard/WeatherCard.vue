@@ -5,6 +5,9 @@ import './WeatherCard.css'
 
 import { getLocationLabel, WeatherIconCode } from '../../../services/WeatherApi'
 
+// Background images, one per weather condition, split by day/night where the
+// visual difference matters (clear, clouds, rain, snow) and shared where it
+// doesn't (a generic night sky covers all cloudy-night states)
 import mistDayBackground from '../../../assets/Weather/Day/mist.jpg'
 import mistNightBackground from '../../../assets/Weather/Night/mist1.jpeg'
 
@@ -37,6 +40,10 @@ const props = defineProps<{
 
 const router = useRouter()
 
+// Maps the API's weather icon code to a local background image.
+// Several icon codes intentionally share one image (e.g. all cloud-cover
+// levels use the same "partly cloudy" art, all night-clouds use one night sky)
+// to keep the asset set small rather than needing art per exact condition.
 const backgroundImage = computed(() => {
   switch (props.icon) {
     // Clear sky
@@ -89,16 +96,19 @@ const backgroundImage = computed(() => {
     case WeatherIconCode.MistNight:
       return mistNightBackground
 
-    // Fallback
+    // Fallback: unrecognized icon codes default to a sunny look rather than breaking
     default:
       return sunnyBackground
   }
 })
 
+// Exposed as an inline style object so it can be bound directly to :style
 const cardStyle = computed(() => ({
   backgroundImage: `url(${backgroundImage.value})`,
 }))
 
+// Navigates to the detail view, passing coordinates via query params so the
+// detail page can fetch fresh data rather than relying on props alone
 function openWeatherDetail() {
   const label = getLocationLabel(props.city, props.country)
 
@@ -110,6 +120,7 @@ function openWeatherDetail() {
     query: {
       lat: props.latitude.toString(),
       lon: props.longitude.toString(),
+      // Omit the query param entirely when false/undefined, rather than passing 'false'
       isCurrentLocation: props.isCurrentLocation ? 'true' : undefined,
     },
   })
@@ -118,6 +129,7 @@ function openWeatherDetail() {
 </script>
 
 <template>
+  <!-- Whole card acts as a button (keyboard + click) to open the detail view -->
   <article
     class="weather-card"
     :style="cardStyle"
@@ -131,6 +143,7 @@ function openWeatherDetail() {
     <div class="weather-card__top">
       <div class="weather-card__location">
 
+        <!-- "MyLocation" badge only shown for the device's current-location card -->
         <p
           v-if="isCurrentLocation"
           class="weather-card__label"

@@ -9,6 +9,9 @@ import profilePicture from '../../assets/Account/profile-user-account.svg'
 import { getCountries } from '../../services/CountryApi'
 import type { Country } from '../../services/CountryApi'
 
+// Toggles between read-only "summary" view and editable form view.
+// Inputs use :readonly bound to !isEditing rather than v-if, so the
+// same elements stay mounted and their v-model state is preserved.
 const isEditing = ref(false)
 
 const fullName = ref('Isabella')
@@ -30,6 +33,9 @@ const FULL_NAME_MAX_LENGTH = 60
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/
 
+// Validates full name and sets/clears fullNameError as a side effect.
+// Returns a boolean so callers (validateForm) can combine results
+// without re-deriving validity from the error string.
 function validateFullName(): boolean {
   const value = fullName.value.trim()
 
@@ -47,6 +53,7 @@ function validateFullName(): boolean {
   return true
 }
 
+// Validates email format against EMAIL_PATTERN and sets/clears emailError.
 function validateEmail(): boolean {
   const value = email.value.trim()
 
@@ -64,6 +71,9 @@ function validateEmail(): boolean {
   return true
 }
 
+// Validates phone number format against PHONE_PATTERN and sets/clears
+// phoneNumberError. Note: this only checks the number itself, not
+// selectedCountry — country code isn't factored into validation.
 function validatePhoneNumber(): boolean {
   const value = phoneNumber.value.trim()
 
@@ -81,6 +91,7 @@ function validatePhoneNumber(): boolean {
   return true
 }
 
+// Runs all field validators before submit.
 function validateForm(): boolean {
   // Run all three so every invalid field shows its own message,
   // rather than short-circuiting on the first failure.
@@ -91,10 +102,14 @@ function validateForm(): boolean {
   return isFullNameValid && isEmailValid && isPhoneNumberValid
 }
 
+// Switches the form into editable mode.
 function editProfile() {
   isEditing.value = true
 }
 
+// Validates the form and, if valid, exits edit mode (treated as "save").
+// Fields stay populated with whatever the user typed either way; there's
+// no revert-on-cancel path since there's no explicit cancel button.
 function submitProfile() {
   if (!validateForm()) {
     return
@@ -103,6 +118,8 @@ function submitProfile() {
   isEditing.value = false
 }
 
+// Looks up the full Country record for the currently selected code,
+// used to resolve the flag image and display name.
 const selectedCountryData = computed(() => {
   return countries.value.find(
     (country) =>
@@ -110,10 +127,15 @@ const selectedCountryData = computed(() => {
   )
 })
 
+// Builds a flag image URL from a country code via the flagcdn service.
 function getFlagUrl(code: string) {
   return `https://flagcdn.com/w40/${code.toLowerCase()}.png`
 }
 
+// Fetches the country list once on mount to populate the dropdown.
+// selectedCountry defaults to 'MY' independently of this fetch, so the
+// select will show the right value as soon as countries load (assuming
+// 'MY' exists in the returned list).
 onMounted(async () => {
   countryLoading.value = true
   countryError.value = ''

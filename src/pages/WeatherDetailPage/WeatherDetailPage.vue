@@ -29,6 +29,9 @@ const city = String(route.params.city)
 const latitude = Number(route.query.lat)
 const longitude = Number(route.query.lon)
 
+// Whether this page was reached with valid coordinates (from search/current
+// location) as opposed to just a city name — determines which API variant
+// (by-name vs by-coordinates) to call throughout this file
 const hasCoordinates =
   !Number.isNaN(latitude) &&
   !Number.isNaN(longitude)
@@ -41,6 +44,8 @@ const loading = ref(false)
 const errorMessage = ref('')
 const lastUpdated = ref('')
 
+// Static "today's date" header — not tied to the weather data's own
+// timestamp, just formatted from the current client time
 const formattedDate = computed(() =>
   new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
@@ -64,6 +69,12 @@ const {
 /*
  * Check if this location is the same as the
  * location received from Chrome.
+ *
+ * Two ways this can be true: either we arrived here via the
+ * ?isCurrentLocation=true query param (set by WeatherCard when
+ * opening the MyLocation card directly), or the coordinates happen
+ * to match the stored Chrome location (e.g. user searched for their
+ * own city by name/address).
  */
 const isMyLocation = computed(() => {
   if (!hasCoordinates) {
@@ -103,29 +114,32 @@ const isSaved = computed(() => {
   )
 })
 
+// Handles the "+" button. MyLocation is a special case: it's never
+// added to the savedCities list itself, it's just "un-deleted" via
+// restoreCurrentLocation, then the user is sent back to the list page
+// to see it reappear.
 function handleSaveCity() {
   if (!hasCoordinates) {
     return
   }
 
-  /*
-   * If this city is actually the user's
-   * Chrome location, restore MyLocation.
-   */
   if (isMyLocation.value) {
     restoreCurrentLocation()
-    router.push('/')
-    return
+  } else {
+    saveCity({
+      name: city,
+      country: weather.value?.country ?? '',
+      latitude,
+      longitude,
+    })
   }
 
-  saveCity({
-    name: city,
-    country: weather.value?.country ?? '',
-    latitude,
-    longitude,
-  })
+  router.push('/')
 }
 
+// Handles the "🗑" button, routing to the correct delete path
+// (MyLocation flag vs. actual saved-city removal) and then
+// returning to the list page either way.
 function handleDeleteCity() {
   if (!hasCoordinates) {
     return
@@ -147,6 +161,10 @@ function handleDeleteCity() {
   router.push('/')
 }
 
+// Navigates to the forecast detail page, passing the clicked hour/day's
+// data via router history state. The JSON.parse(JSON.stringify(...))
+// round-trip strips out any non-serializable bits (e.g. Vue reactivity
+// proxies) so what's stored in history.state is a plain, cloneable object.
 function openForecastDetail(
   item: DetailedForecastItem
 ) {
@@ -163,6 +181,10 @@ function openForecastDetail(
   })
 }
 
+// Fetches current weather + forecast, branching on whether we have
+// coordinates (search result / current location) or only a city name
+// (e.g. a bookmarked/shared URL). Both branches populate the same refs
+// so the template doesn't need to know which path was taken.
 async function loadWeather() {
   loading.value = true
   errorMessage.value = ''
@@ -211,6 +233,9 @@ async function loadWeather() {
   }
 }
 
+// Stamps "last updated" with the current time — called after a
+// successful load, not on error, so a failed refresh doesn't imply
+// fresher data than what's actually shown.
 function updateLastUpdated() {
   lastUpdated.value =
     new Intl.DateTimeFormat('en-US', {
@@ -219,6 +244,10 @@ function updateLastUpdated() {
     }).format(new Date())
 }
 
+// Thin wrapper around loadWeather for the refresh button — kept as a
+// separate named function (rather than binding loadWeather directly)
+// in case refresh-specific behavior (e.g. a spinner, analytics) is
+// added later without touching the initial-load call site.
 async function refreshWeather() {
   await loadWeather()
 }
@@ -311,7 +340,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Hourly Forecast -->
+      <!-- Hourly Forecast: each entry is clickable, opening the shared
+           forecast-detail page with this specific hour's data -->
       <section class="weather-detail-page__section">
         <h2 class="weather-detail-page__section-title">
           Hourly Forecast
@@ -346,7 +376,8 @@ onMounted(() => {
         </div>
       </section>
 
-      <!-- Weekly Forecast -->
+      <!-- Weekly Forecast: same clickable pattern as Hourly Forecast above,
+           opening the forecast-detail page with this day's data -->
       <section class="weather-detail-page__section">
         <h2 class="weather-detail-page__section-title">
           Weekly Forecast
