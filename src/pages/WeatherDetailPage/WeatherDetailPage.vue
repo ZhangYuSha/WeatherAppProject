@@ -188,37 +188,39 @@ onMounted(() => {
       v-if="weather && !loading"
       class="weather-detail-page__main"
     >
-      <p class="weather-detail-page__date">
-        {{ formattedDate }}
-      </p>
+      <div class="weather-detail-page__hero">
+        <p class="weather-detail-page__date">
+          {{ formattedDate }}
+        </p>
 
-      <img
-        class="weather-detail-page__weather-icon"
-        :src="`https://openweathermap.org/img/wn/${weather.icon}@2x.png`"
-        :alt="weather.condition"
-      />
+        <img
+          class="weather-detail-page__weather-icon"
+          :src="`https://openweathermap.org/img/wn/${weather.icon}@2x.png`"
+          :alt="weather.condition"
+        />
 
-      <p class="weather-detail-page__temperature">
-        {{ weather.temperature }}°
-      </p>
+        <p class="weather-detail-page__temperature">
+          {{ weather.temperature }}°
+        </p>
 
-      <p class="weather-detail-page__condition">
-        {{ weather.condition }}
-      </p>
+        <p class="weather-detail-page__condition">
+          {{ weather.condition }}
+        </p>
 
-      <div class="weather-detail-page__last-update">
-        <span>
-          Last Update {{ lastUpdated }}
-        </span>
+        <div class="weather-detail-page__last-update">
+          <span>
+            Last Update {{ lastUpdated }}
+          </span>
 
-        <button
-          class="weather-detail-page__refresh"
-          type="button"
-          aria-label="Refresh weather"
-          @click="refreshWeather"
-        >
-          ↻
-        </button>
+          <button
+            class="weather-detail-page__refresh"
+            type="button"
+            aria-label="Refresh weather"
+            @click="refreshWeather"
+          >
+            ↻
+          </button>
+        </div>
       </div>
 
       <section class="weather-detail-page__section">
