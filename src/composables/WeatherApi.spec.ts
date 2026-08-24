@@ -1,6 +1,6 @@
 // WeatherApi.spec.ts
 import { describe, it, expect } from 'vitest'
-import { getLocationLabel } from './WeatherApi'
+import { getLocationLabel } from '../services/WeatherApi'
 
 describe('getLocationLabel', () => {
   it('joins name, state, and country when all present', () => {
