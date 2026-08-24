@@ -9,6 +9,6 @@ describe('getLocationLabel', () => {
 
   it('omits state when not provided', () => {
     const label = getLocationLabel('Paris', 'FR')
-    expect(label.split(',').length).toBe(2) // name, country — no state
+    expect(label.split(',').length).toBe(2) // name, country, no state
   })
 })

@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 import './ForecastDetailPage.css'
 
 import PageWithBackButton from '../../components/templates/PageWithBackButton/PageWithBackButton.vue'
+
+import {
+  getWeatherForecast,
+  getWeatherForecastByCoordinates,
+} from '../../services/WeatherApi'
+
 import type { DetailedForecastItem } from '../../services/WeatherApi'
 
 const route = useRoute()
@@ -12,17 +19,81 @@ const route = useRoute()
 // city param (shouldn't normally happen, but keeps the page title sane)
 const city = String(route.params.city ?? 'Forecast')
 
-// Forecast data is passed via router.push's history state rather than
-// route params/query, since it's a full object (not just an ID) and
-// wasn't fetched by this page itself, the previous page already had
-// it in memory. This means a direct link or a page refresh loses the
-// data entirely, which is why the v-else "empty" branch below exists.
-const item = history.state?.forecastData as DetailedForecastItem | undefined
+// Which list the clicked card came from ("hour" | "day") and its index
+// in that list — encoded on the RouterLink in the previous page instead
+// of passing the full object via history.state.
+const kind = route.query.kind === 'day' ? 'day' : 'hour'
+const index = Number(route.query.index)
+
+const latitude = Number(route.query.lat)
+const longitude = Number(route.query.lon)
+
+const hasCoordinates =
+  !Number.isNaN(latitude) &&
+  !Number.isNaN(longitude)
+
+const hasValidIndex = !Number.isNaN(index) && index >= 0
+
+const item = ref<DetailedForecastItem | undefined>(
+  undefined
+)
+
+const loading = ref(false)
+const errorMessage = ref('')
+
+// Refetches the forecast (same call the list page made) and picks out
+// the single hour/day entry this page needs. Unlike the previous
+// history.state approach, this means a direct link or a page refresh
+// still works, at the cost of an extra network call.
+async function loadForecastItem() {
+  if (!hasValidIndex) {
+    return
+  }
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const forecastResult = hasCoordinates
+      ? await getWeatherForecastByCoordinates(
+          latitude,
+          longitude
+        )
+      : await getWeatherForecast(city)
+
+    const list =
+      kind === 'day'
+        ? forecastResult.daily
+        : forecastResult.hourly
+
+    item.value = list[index] as
+      | DetailedForecastItem
+      | undefined
+  } catch (error) {
+    errorMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'Unable to load forecast details.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadForecastItem()
+})
 </script>
 
 <template>
   <PageWithBackButton class="forecast-detail-page" :title="city">
-    <div v-if="item" class="forecast-detail-page__content">
+    <p
+      v-if="loading"
+      class="forecast-detail-page__loading"
+    >
+      Loading forecast...
+    </p>
+
+    <div v-else-if="item" class="forecast-detail-page__content">
       <header class="forecast-detail-page__hero">
         <h2 class="forecast-detail-page__time-title">{{ item.title }}</h2>
         <img
@@ -144,8 +215,17 @@ const item = history.state?.forecastData as DetailedForecastItem | undefined
       </section>
     </div>
 
-    <!-- Shown when this page is reached without forecastData in history state
-         (e.g. direct navigation, refresh, or back/forward from outside this flow) -->
+    <p
+      v-else-if="errorMessage"
+      class="forecast-detail-page__error"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </p>
+
+    <!-- Shown when this page is reached without a valid kind/index in the
+         route query (e.g. malformed link), or the fetched list didn't
+         contain that index -->
     <div v-else class="forecast-detail-page__empty">
       <p class="forecast-detail-page__error">
         No forecast details available. Please return to the city view and try again.
