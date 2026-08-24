@@ -164,6 +164,7 @@
   border-radius: 14px;
   background: #f2f2f2;
   color: #201C1C;
+  text-decoration: none;
 }
 
 .weather-detail-page__hour-icon {
@@ -205,6 +206,7 @@
   background: #D2DFFF;
   color: #201C1C;
   text-align: left;
+  text-decoration: none;
 }
 
 .weather-detail-page__day-icon {

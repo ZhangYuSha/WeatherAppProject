@@ -18,7 +18,6 @@ import type {
   WeatherData,
   HourlyForecastData,
   DailyForecastData,
-  DetailedForecastItem,
 } from '../../services/WeatherApi'
 
 const route = useRoute()
@@ -161,24 +160,27 @@ function handleDeleteCity() {
   router.push('/')
 }
 
-// Navigates to the forecast detail page, passing the clicked hour/day's
-// data via router history state. The JSON.parse(JSON.stringify(...))
-// round-trip strips out any non-serializable bits (e.g. Vue reactivity
-// proxies) so what's stored in history.state is a plain, cloneable object.
-function openForecastDetail(
-  item: DetailedForecastItem
+// Builds the RouterLink target for a forecast card. Instead of passing the
+// item itself via history.state, we encode enough to look it up again on
+// the detail page: which list it came from ("hour" | "day"), its index in
+// that list, and the coordinates/city needed to refetch weather there.
+function forecastLinkTarget(
+  kind: 'hour' | 'day',
+  index: number
 ) {
-  router.push({
+  return {
     name: 'forecast-detail',
     params: {
       city,
     },
-    state: {
-      forecastData: JSON.parse(
-        JSON.stringify(item)
-      ),
+    query: {
+      kind,
+      index: String(index),
+      ...(hasCoordinates
+        ? { lat: String(latitude), lon: String(longitude) }
+        : {}),
     },
-  })
+  }
 }
 
 // Fetches current weather + forecast, branching on whether we have
@@ -340,24 +342,21 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Hourly Forecast: each entry is clickable, opening the shared
-           forecast-detail page with this specific hour's data -->
+      <!-- Hourly Forecast: each entry is a RouterLink, opening the shared
+           forecast-detail page for this hour via route query (kind/index)
+           instead of history.state -->
       <section class="weather-detail-page__section">
         <h2 class="weather-detail-page__section-title">
           Hourly Forecast
         </h2>
 
         <div class="weather-detail-page__hourly">
-          <article
+          <RouterLink
             v-for="(item, index) in hourlyForecast"
             :key="`${item.time}-${index}`"
+            :to="forecastLinkTarget('hour', index)"
             class="weather-detail-page__hour weather-detail-page__clickable"
-            tabindex="0"
-            role="button"
             :aria-label="`Hourly forecast for ${item.time}`"
-            @click="openForecastDetail(item)"
-            @keydown.enter="openForecastDetail(item)"
-            @keydown.space.prevent="openForecastDetail(item)"
           >
             <img
               class="weather-detail-page__hour-icon"
@@ -373,28 +372,24 @@ onMounted(() => {
             <p class="weather-detail-page__hour-time">
               {{ item.time }}
             </p>
-          </article>
+          </RouterLink>
         </div>
       </section>
 
-      <!-- Weekly Forecast: same clickable pattern as Hourly Forecast above,
-           opening the forecast-detail page with this day's data -->
+      <!-- Weekly Forecast: same RouterLink pattern as Hourly Forecast above,
+           opening the forecast-detail page for this day via route query -->
       <section class="weather-detail-page__section">
         <h2 class="weather-detail-page__section-title">
           Weekly Forecast
         </h2>
 
         <div class="weather-detail-page__weekly">
-          <article
+          <RouterLink
             v-for="(item, index) in dailyForecast"
             :key="`${item.day}-${index}`"
+            :to="forecastLinkTarget('day', index)"
             class="weather-detail-page__day weather-detail-page__clickable"
-            tabindex="0"
-            role="button"
             :aria-label="`Daily forecast for ${item.day}`"
-            @click="openForecastDetail(item)"
-            @keydown.enter="openForecastDetail(item)"
-            @keydown.space.prevent="openForecastDetail(item)"
           >
             <img
               class="weather-detail-page__day-icon"
@@ -423,7 +418,7 @@ onMounted(() => {
             >
               &gt;
             </span>
-          </article>
+          </RouterLink>
         </div>
       </section>
     </section>

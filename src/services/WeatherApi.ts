@@ -258,7 +258,7 @@ function generateSuggestions(
   }
 
   const isSunny = lowerCondition.includes('clear') || lowerCondition.includes('sun')
-  if (isSunny || temp >= 25) {
+  if (isSunny && temp >= 25) {
     suggestions.push('Apply sunscreen and wear sunglasses')
   }
 
