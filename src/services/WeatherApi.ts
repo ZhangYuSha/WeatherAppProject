@@ -314,7 +314,7 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
 
       const date = new Date(`${dayKey}T12:00:00`)
       const dayName = new Intl.DateTimeFormat('en-US', {
-        weekday: 'short',
+        weekday: 'long',
       }).format(date)
 
       return {
