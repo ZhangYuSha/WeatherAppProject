@@ -9,7 +9,6 @@ import type { DetailedForecastItem } from '../../services/WeatherApi'
 const route = useRoute()
 const city = String(route.params.city ?? 'Forecast')
 
-// Retrieve state passed via router
 const item = history.state?.forecastData as DetailedForecastItem | undefined
 </script>
 
@@ -25,30 +24,90 @@ const item = history.state?.forecastData as DetailedForecastItem | undefined
         />
         <p class="forecast-detail-page__temp">{{ item.temperature }}°C</p>
         <p class="forecast-detail-page__condition">{{ item.condition }}</p>
-        
+
         <div v-if="item.high !== undefined && item.low !== undefined" class="forecast-detail-page__range">
           <span>H: {{ item.high }}°</span>
           <span>L: {{ item.low }}°</span>
         </div>
       </header>
 
-      <!-- Detailed Metrics Section -->
+      <!-- Weather Details Section -->
       <section class="forecast-detail-page__section">
         <h3 class="forecast-detail-page__section-title">Weather Details</h3>
+        
         <div class="forecast-detail-page__grid">
+          <!-- Precipitation Card -->
           <div class="forecast-detail-page__card">
-            <span class="forecast-detail-page__card-label">Precipitation</span>
-            <span class="forecast-detail-page__card-value">{{ item.pop }}%</span>
+            <span class="forecast-detail-page__card-label">Precipitation (%)</span>
+            
+            <div v-if="item.popMin !== undefined" class="forecast-detail-page__stats">
+              <div class="forecast-detail-page__stat">
+                <span class="forecast-detail-page__stat-label">Min</span>
+                <span class="forecast-detail-page__stat-value">{{ item.popMin }}</span>
+              </div>
+              <div class="forecast-detail-page__stat">
+                <span class="forecast-detail-page__stat-label">Avg</span>
+                <span class="forecast-detail-page__stat-value">{{ item.popAvg }}</span>
+              </div>
+              <div class="forecast-detail-page__stat">
+                <span class="forecast-detail-page__stat-label">Max</span>
+                <span class="forecast-detail-page__stat-value">{{ item.popMax }}</span>
+              </div>
+            </div>
+
+            <span v-else class="forecast-detail-page__card-value">
+              {{ item.pop }}%
+            </span>
           </div>
 
+          <!-- Humidity Card -->
           <div class="forecast-detail-page__card">
-            <span class="forecast-detail-page__card-label">Humidity</span>
-            <span class="forecast-detail-page__card-value">{{ item.humidity }}%</span>
+            <span class="forecast-detail-page__card-label">Humidity (%)</span>
+            
+            <div v-if="item.humidityMin !== undefined" class="forecast-detail-page__stats">
+              <div class="forecast-detail-page__stat">
+                <span class="forecast-detail-page__stat-label">Min</span>
+                <span class="forecast-detail-page__stat-value">{{ item.humidityMin }}</span>
+              </div>
+              <div class="forecast-detail-page__stat">
+                <span class="forecast-detail-page__stat-label">Avg</span>
+                <span class="forecast-detail-page__stat-value">{{ item.humidityAvg }}</span>
+              </div>
+              <div class="forecast-detail-page__stat">
+                <span class="forecast-detail-page__stat-label">Max</span>
+                <span class="forecast-detail-page__stat-value">{{ item.humidityMax }}</span>
+              </div>
+            </div>
+
+            <span v-else class="forecast-detail-page__card-value">
+              {{ item.humidity }}%
+            </span>
           </div>
 
+          <!-- Wind Speed Card -->
           <div class="forecast-detail-page__card">
-            <span class="forecast-detail-page__card-label">Wind Speed</span>
-            <span class="forecast-detail-page__card-value">{{ item.windSpeed }} km/h</span>
+            <span class="forecast-detail-page__card-label">Wind Speed (km/h)</span>
+            
+            <template v-if="item.windSpeedMin !== undefined">
+              <div class="forecast-detail-page__stats">
+                <div class="forecast-detail-page__stat">
+                  <span class="forecast-detail-page__stat-label">Min</span>
+                  <span class="forecast-detail-page__stat-value">{{ item.windSpeedMin }}</span>
+                </div>
+                <div class="forecast-detail-page__stat">
+                  <span class="forecast-detail-page__stat-label">Avg</span>
+                  <span class="forecast-detail-page__stat-value">{{ item.windSpeedAvg }}</span>
+                </div>
+                <div class="forecast-detail-page__stat">
+                  <span class="forecast-detail-page__stat-label">Max</span>
+                  <span class="forecast-detail-page__stat-value">{{ item.windSpeedMax }}</span>
+                </div>
+              </div>
+            </template>
+
+            <span v-else class="forecast-detail-page__card-value">
+              {{ item.windSpeed }} km/h
+            </span>
           </div>
         </div>
       </section>
