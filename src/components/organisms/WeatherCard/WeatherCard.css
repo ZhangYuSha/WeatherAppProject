@@ -1,45 +1,49 @@
 .weather-card {
-
   width: 100%;
-
   min-height: 180px;
-
   padding: 24px;
-
   box-sizing: border-box;
-
   border-radius: 16px;
-
   background-color: #f2f2f2;
-
   background-position: center;
-
   background-size: cover;
-
   background-repeat: no-repeat;
-
   color: white;
-
   display: flex;
-
   flex-direction: column;
-
   justify-content: space-between;
-
   cursor: pointer;
-
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 
+  /* Guarantees text contrast regardless of which background photo
+     is showing — without this, white text over bright cloud/sky
+     images (e.g. "broken clouds") fails WCAG contrast in places. */
+  position: relative;
+}
+
+.weather-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.15) 40%,
+    rgba(0, 0, 0, 0.15) 60%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  pointer-events: none;
 }
 
 /* Top section */
 
 .weather-card__top {
+  position: relative;
+  z-index: 1;
   display: flex;
-
   justify-content: space-between;
   align-items: flex-start;
-
   flex: 1;
 }
 
@@ -49,7 +53,6 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-
   margin: 0;
 }
 
@@ -57,10 +60,8 @@
 
 .weather-card__label {
   margin: 0;
-
   font-size: 28px;
   font-weight: 700;
-
   line-height: 1.1;
 }
 
@@ -71,7 +72,6 @@
   color: white;
   font-size: 20px;
   font-weight: 500;
-
   line-height: 1.2;
 }
 
@@ -80,17 +80,16 @@
 .weather-card__temperature {
   font-size: 72px;
   font-weight: 600;
-
   line-height: 0.85;
-
   white-space: nowrap;
 }
 
 /* Bottom section */
 
 .weather-card__bottom {
+  position: relative;
+  z-index: 1;
   display: flex;
-
   justify-content: space-between;
   align-items: flex-end;
 }
@@ -99,7 +98,6 @@
 
 .weather-card__condition {
   margin: 0;
-
   font-size: 20px;
   font-weight: 500;
 }
@@ -108,16 +106,9 @@
 
 .weather-card__high-low {
   margin: 0;
-
   font-size: 20px;
   font-weight: 500;
-
   white-space: nowrap;
-}
-
-.weather-card {
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .weather-card:hover {
@@ -128,4 +119,30 @@
 .weather-card:focus-visible {
   outline: 2px solid #222;
   outline-offset: 3px;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .weather-card {
+    padding: 18px;
+    min-height: 150px;
+  }
+
+  .weather-card__label {
+    font-size: 22px;
+  }
+
+  .weather-card__city {
+    font-size: 17px;
+  }
+
+  .weather-card__temperature {
+    font-size: 56px;
+  }
+
+  .weather-card__condition,
+  .weather-card__high-low {
+    font-size: 16px;
+  }
 }
