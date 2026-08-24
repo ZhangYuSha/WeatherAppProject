@@ -2,8 +2,6 @@
 
 A responsive single-page weather application built with **Vue 3**, **TypeScript**, and the **Composition API**, integrating the [OpenWeatherMap API](https://openweathermap.org/api). Built as a practical test for the Senior Front-End Engineer role.
 
-> Adjust the placeholders (`<...>`) below — API keys, scripts, deploy URL — to match your actual setup before submitting.
-
 ## Features
 
 - **Search & discover** : debounced city/airport search with live autocomplete suggestions (`SearchBar`)
@@ -53,7 +51,7 @@ src/
 └── App.vue
 ```
 
-**Pages** compose **templates**, **organisms**, **molecules**, and **atoms** — they hold routing and page-level data-fetching logic but delegate presentation and reusable interaction patterns downward.
+**Pages** compose **templates**, **organisms**, **molecules**, and **atoms** - they hold routing and page-level data-fetching logic but delegate presentation and reusable interaction patterns downward.
 
 ## Getting Started
 
@@ -66,8 +64,8 @@ src/
 ### Installation
 
 ```bash
-git clone <repository-url>
-cd <project-folder>
+git clone https://github.com/ZhangYuSha/WeatherAppProject.git
+cd WeatherAppProject
 npm install
 ```
 
