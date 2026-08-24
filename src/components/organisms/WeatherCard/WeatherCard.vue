@@ -135,7 +135,7 @@ function openWeatherDetail() {
           v-if="isCurrentLocation"
           class="weather-card__label"
         >
-          My Location
+          MyLocation
         </p>
 
         <h2 class="weather-card__city">

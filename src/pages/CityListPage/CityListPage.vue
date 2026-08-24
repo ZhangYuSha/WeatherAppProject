@@ -29,15 +29,13 @@ const currentLocationWeather = ref<WeatherData | null>(null)
 const locationLoading = ref(false)
 const locationErrorMessage = ref('')
 
-// Shared reactive state — the same weatherByCity/loading/errorMessage
-// refs are used by WeatherDetailPage via useSavedCities, so saving/
-// deleting a city there is reflected here automatically without a
-// route change or refetch.
 const {
   weatherByCity,
   loading,
   errorMessage,
   refreshWeatherForSavedCities,
+  setCurrentLocation,
+  isCurrentLocationDeleted,
 } = useSavedCities()
 
 function selectLocation(location: LocationSuggestion) {
@@ -75,6 +73,13 @@ function getCurrentLocation() {
       try {
         const latitude = position.coords.latitude
         const longitude = position.coords.longitude
+
+        // Store Chrome's current location globally.
+        // This does NOT restore MyLocation if it was deleted.
+        setCurrentLocation(
+          latitude,
+          longitude
+        )
 
         const result = await getWeatherByCoordinates(
           latitude,
@@ -165,7 +170,10 @@ onMounted(() => {
 
     <!-- Current Location -->
     <section
-      v-if="currentLocationWeather"
+      v-if="
+        currentLocationWeather &&
+        !isCurrentLocationDeleted
+      "
       class="city-list-page__cards"
     >
       <WeatherCard
@@ -199,7 +207,10 @@ onMounted(() => {
 
     <!-- Saved Cities -->
     <section
-      v-if="!loading && weatherByCity.length > 0"
+      v-if="
+        !loading &&
+        weatherByCity.length > 0
+      "
       class="city-list-page__cards"
     >
       <WeatherCard
