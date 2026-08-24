@@ -62,7 +62,7 @@ function persistToStorage() {
  * Two coordinates are treated as the same location if they are
  * within approximately 1km of each other.
  */
-function isSameCity(
+export function isSameCity(
   saved: {
     latitude: number
     longitude: number
