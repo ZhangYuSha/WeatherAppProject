@@ -22,8 +22,17 @@ export interface DetailedForecastItem {
   condition: string
   icon: string
   humidity: number
+  humidityMin?: number
+  humidityAvg?: number
+  humidityMax?: number
   windSpeed: number
+  windSpeedMin?: number
+  windSpeedAvg?: number
+  windSpeedMax?: number
   pop: number
+  popMin?: number
+  popAvg?: number
+  popMax?: number
   high?: number
   low?: number
   suggestions: string[]
@@ -35,6 +44,15 @@ export interface HourlyForecastData extends DetailedForecastItem {
 
 export interface DailyForecastData extends DetailedForecastItem {
   day: string
+  popMin: number
+  popAvg: number
+  popMax: number
+  humidityMin: number
+  humidityAvg: number
+  humidityMax: number
+  windSpeedMin: number
+  windSpeedAvg: number
+  windSpeedMax: number
 }
 
 export interface LocationSuggestion {
@@ -188,29 +206,32 @@ function generateSuggestions(
   if (pop >= 30 || lowerCondition.includes('rain') || lowerCondition.includes('drizzle')) {
     suggestions.push('Bring an umbrella or raincoat')
   }
+
   if (lowerCondition.includes('snow')) {
     suggestions.push('Wear insulated waterproof boots and a heavy winter coat')
   }
+
   if (temp <= 10) {
     suggestions.push('Wear a heavy coat, gloves, and a warm hat')
   } else if (temp > 10 && temp <= 18) {
     suggestions.push('A light jacket, hoodie, or sweater is recommended')
   } else if (temp >= 28) {
-    suggestions.push('Wear light, breathable clothing and apply sunscreen')
+    suggestions.push('Wear light, breathable clothing')
   }
+
   if (windSpeed >= 20) {
     suggestions.push('Windy conditions expected; secure hats and loose items')
   }
-  if (pop < 20 && temp > 18 && temp < 28 && windSpeed < 20) {
-    suggestions.push('Conditions look great for outdoor activities')
-  }
 
-  // Trigger sunscreen for clear/sunny weather OR hot temperatures (>= 25°C)
   const isSunny = lowerCondition.includes('clear') || lowerCondition.includes('sun')
   if (isSunny || temp >= 25) {
     suggestions.push('Apply sunscreen and wear sunglasses')
   }
-  
+
+  if (pop < 20 && temp > 18 && temp < 28 && windSpeed < 20) {
+    suggestions.push('Great weather for outdoor activities!')
+  }
+
   return suggestions
 }
 
@@ -268,19 +289,33 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
     ([dayKey, items]) => {
       const firstItem = items[0]
       const temps = items.map((item) => item.main.temp)
-      const maxPop = Math.max(...items.map((item) => item.pop || 0))
-      const maxWind = Math.max(...items.map((item) => item.wind.speed))
-      const avgHumidity = Math.round(
-        items.reduce((acc, item) => acc + item.main.humidity, 0) / items.length
+
+      // Calculate Rain Ranges (%)
+      const popList = items.map((item) => Math.round((item.pop || 0) * 100))
+      const popMin = Math.min(...popList)
+      const popMax = Math.max(...popList)
+      const popAvg = Math.round(popList.reduce((acc, val) => acc + val, 0) / popList.length)
+
+      // Calculate Humidity Ranges (%)
+      const humidityList = items.map((item) => item.main.humidity)
+      const humidityMin = Math.min(...humidityList)
+      const humidityMax = Math.max(...humidityList)
+      const humidityAvg = Math.round(
+        humidityList.reduce((acc, val) => acc + val, 0) / humidityList.length
+      )
+
+      // Calculate Wind Speed Ranges (km/h)
+      const windList = items.map((item) => Math.round(item.wind.speed * 3.6))
+      const windSpeedMin = Math.min(...windList)
+      const windSpeedMax = Math.max(...windList)
+      const windSpeedAvg = Math.round(
+        windList.reduce((acc, val) => acc + val, 0) / windList.length
       )
 
       const date = new Date(`${dayKey}T12:00:00`)
       const dayName = new Intl.DateTimeFormat('en-US', {
         weekday: 'short',
       }).format(date)
-
-      const popPercent = Math.round(maxPop * 100)
-      const windKmh = Math.round(maxWind * 3.6)
 
       return {
         title: dayName,
@@ -290,14 +325,23 @@ function formatForecastData(data: OpenWeatherForecastResponse): {
         low: Math.round(Math.min(...temps)),
         condition: firstItem.weather[0].description,
         icon: firstItem.weather[0].icon,
-        humidity: avgHumidity,
-        windSpeed: windKmh,
-        pop: popPercent,
+        humidity: humidityAvg,
+        humidityMin,
+        humidityAvg,
+        humidityMax,
+        windSpeed: windSpeedMax,
+        windSpeedMin,
+        windSpeedAvg,
+        windSpeedMax,
+        pop: popMax,
+        popMin,
+        popAvg,
+        popMax,
         suggestions: generateSuggestions(
           firstItem.weather[0].description,
           firstItem.main.temp,
-          popPercent,
-          windKmh
+          popMax,
+          windSpeedMax
         ),
       }
     }
