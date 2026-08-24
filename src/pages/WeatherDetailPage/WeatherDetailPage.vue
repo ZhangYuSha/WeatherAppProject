@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import './WeatherDetailPage.css'
 
@@ -19,19 +19,14 @@ import type {
   WeatherData,
   HourlyForecastData,
   DailyForecastData,
+  DetailedForecastItem,
 } from '../../services/WeatherApi'
 
 const route = useRoute()
+const router = useRouter()
 
-// The city param already includes country (and state, if any)
-// when navigating from WeatherCard or SearchBar, e.g.
-// "London, United Kingdom" vs "London, Canada" — so it's safe
-// to display directly without further disambiguation.
 const city = String(route.params.city)
 
-// Coordinates come from the query string when navigating from
-// WeatherCard or SearchBar. If missing (e.g. a bare bookmarked
-// URL), we fall back to name-based lookup below.
 const latitude = Number(route.query.lat)
 const longitude = Number(route.query.lon)
 const hasCoordinates =
@@ -45,11 +40,6 @@ const loading = ref(false)
 const errorMessage = ref('')
 const lastUpdated = ref('')
 
-// Computed rather than called inline in the template — the
-// previous inline `new Intl.DateTimeFormat(...).format(new Date())`
-// re-ran a full date-formatting pass on every re-render of this
-// component, even for re-renders unrelated to the date itself
-// (e.g. lastUpdated changing after a refresh).
 const formattedDate = computed(() =>
   new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
@@ -59,21 +49,14 @@ const formattedDate = computed(() =>
   }).format(new Date())
 )
 
-// Shared reactive state — the same savedCities ref used by
-// CityListPage. Saving/deleting a city here updates that page's
-// list immediately, with no route change or refetch required.
 const { isCitySaved, saveCity, deleteCity } = useSavedCities()
 
-// isSaved is derived from the shared savedCities state, rather
-// than tracked as its own local copy that needs manual syncing.
 const isSaved = computed(() =>
   hasCoordinates ? isCitySaved(latitude, longitude) : false
 )
 
 function handleSaveCity() {
-  if (!hasCoordinates) {
-    return
-  }
+  if (!hasCoordinates) return
 
   saveCity({
     name: city,
@@ -84,11 +67,17 @@ function handleSaveCity() {
 }
 
 function handleDeleteCity() {
-  if (!hasCoordinates) {
-    return
-  }
+  if (!hasCoordinates) return
 
   deleteCity(latitude, longitude)
+}
+
+function openForecastDetail(item: DetailedForecastItem) {
+  router.push({
+    name: 'forecast-detail',
+    params: { city },
+    state: { forecastData: JSON.parse(JSON.stringify(item)) },
+  })
 }
 
 async function loadWeather() {
@@ -97,11 +86,7 @@ async function loadWeather() {
 
   try {
     if (hasCoordinates) {
-      weather.value = await getWeatherByCoordinates(
-        latitude,
-        longitude
-      )
-
+      weather.value = await getWeatherByCoordinates(latitude, longitude)
       const forecastResult = await getWeatherForecastByCoordinates(
         latitude,
         longitude
@@ -111,7 +96,6 @@ async function loadWeather() {
       dailyForecast.value = forecastResult.daily
     } else {
       weather.value = await getWeather(city)
-
       const forecastResult = await getWeatherForecast(city)
 
       hourlyForecast.value = forecastResult.hourly
@@ -121,9 +105,7 @@ async function loadWeather() {
     updateLastUpdated()
   } catch (error) {
     errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : 'Unable to load weather.'
+      error instanceof Error ? error.message : 'Unable to load weather.'
   } finally {
     loading.value = false
   }
@@ -169,25 +151,15 @@ onMounted(() => {
       </button>
     </template>
 
-    <p
-      v-if="loading"
-      class="weather-detail-page__loading"
-    >
+    <p v-if="loading" class="weather-detail-page__loading">
       Loading weather...
     </p>
 
-    <p
-      v-if="errorMessage"
-      class="weather-detail-page__error"
-      role="alert"
-    >
+    <p v-if="errorMessage" class="weather-detail-page__error" role="alert">
       {{ errorMessage }}
     </p>
 
-    <section
-      v-if="weather && !loading"
-      class="weather-detail-page__main"
-    >
+    <section v-if="weather && !loading" class="weather-detail-page__main">
       <div class="weather-detail-page__hero">
         <p class="weather-detail-page__date">
           {{ formattedDate }}
@@ -208,9 +180,7 @@ onMounted(() => {
         </p>
 
         <div class="weather-detail-page__last-update">
-          <span>
-            Last Update {{ lastUpdated }}
-          </span>
+          <span>Last Update {{ lastUpdated }}</span>
 
           <button
             class="weather-detail-page__refresh"
@@ -223,16 +193,20 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Hourly Forecast -->
       <section class="weather-detail-page__section">
-        <h2 class="weather-detail-page__section-title">
-          Hourly Forecast
-        </h2>
+        <h2 class="weather-detail-page__section-title">Hourly Forecast</h2>
 
         <div class="weather-detail-page__hourly">
           <article
             v-for="(item, index) in hourlyForecast"
             :key="`${item.time}-${index}`"
-            class="weather-detail-page__hour"
+            class="weather-detail-page__hour weather-detail-page__clickable"
+            tabindex="0"
+            role="button"
+            :aria-label="`Hourly forecast for ${item.time}`"
+            @click="openForecastDetail(item)"
+            @keydown.enter="openForecastDetail(item)"
           >
             <img
               class="weather-detail-page__hour-icon"
@@ -252,16 +226,20 @@ onMounted(() => {
         </div>
       </section>
 
+      <!-- Weekly Forecast -->
       <section class="weather-detail-page__section">
-        <h2 class="weather-detail-page__section-title">
-          Weekly Forecast
-        </h2>
+        <h2 class="weather-detail-page__section-title">Weekly Forecast</h2>
 
         <div class="weather-detail-page__weekly">
           <article
             v-for="(item, index) in dailyForecast"
             :key="`${item.day}-${index}`"
-            class="weather-detail-page__day"
+            class="weather-detail-page__day weather-detail-page__clickable"
+            tabindex="0"
+            role="button"
+            :aria-label="`Daily forecast for ${item.day}`"
+            @click="openForecastDetail(item)"
+            @keydown.enter="openForecastDetail(item)"
           >
             <img
               class="weather-detail-page__day-icon"
@@ -284,10 +262,7 @@ onMounted(() => {
               {{ item.temperature }}°
             </p>
 
-            <span
-              class="weather-detail-page__day-arrow"
-              aria-hidden="true"
-            >
+            <span class="weather-detail-page__day-arrow" aria-hidden="true">
               &gt;
             </span>
           </article>
