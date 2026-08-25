@@ -334,3 +334,9 @@
     font-size: 18px;
   }
 }
+
+.weather-detail-page__delete-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}

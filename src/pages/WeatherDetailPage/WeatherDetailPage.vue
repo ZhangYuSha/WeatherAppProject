@@ -6,6 +6,7 @@ import './WeatherDetailPage.css'
 
 import PageWithBackButton from '../../components/templates/PageWithBackButton/PageWithBackButton.vue'
 import { useSavedCities } from '../../composables/useSavedCities'
+import deleteIcon from '../../assets/Delete/delete.jpg'
 
 import {
   getWeather,
@@ -284,7 +285,11 @@ onMounted(() => {
         aria-label="Delete city"
         @click="handleDeleteCity"
       >
-        🗑
+        <img
+          :src="deleteIcon"
+          alt=""
+          class="weather-detail-page__delete-icon"
+        />
       </button>
     </template>
 
