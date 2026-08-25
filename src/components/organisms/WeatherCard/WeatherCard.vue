@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import './WeatherCard.css'
 
 import { getLocationLabel, WeatherIconCode } from '../../../services/WeatherApi'
@@ -37,8 +36,6 @@ const props = defineProps<{
   longitude: number
   isCurrentLocation?: boolean
 }>()
-
-const router = useRouter()
 
 // Maps the API's weather icon code to a local background image.
 // Several icon codes intentionally share one image (e.g. all cloud-cover
@@ -107,12 +104,13 @@ const cardStyle = computed(() => ({
   backgroundImage: `url(${backgroundImage.value})`,
 }))
 
-// Navigates to the detail view, passing coordinates via query params so the
-// detail page can fetch fresh data rather than relying on props alone
-function openWeatherDetail() {
+// Builds the RouterLink target for this card. Same destination/query shape
+// openWeatherDetail() used to build for router.push, just returned as an
+// object for :to instead of imperatively pushed on click.
+const detailLinkTarget = computed(() => {
   const label = getLocationLabel(props.city, props.country)
 
-  router.push({
+  return {
     name: 'weather-detail',
     params: {
       city: label,
@@ -123,22 +121,19 @@ function openWeatherDetail() {
       // Omit the query param entirely when false/undefined, rather than passing 'false'
       isCurrentLocation: props.isCurrentLocation ? 'true' : undefined,
     },
-  })
-}
-
+  }
+})
 </script>
 
 <template>
-  <!-- Whole card acts as a button (keyboard + click) to open the detail view -->
-  <article
+  <!-- Whole card is a RouterLink to the detail view; navigation, click,
+       and keyboard activation are all handled natively, no custom
+       @click/@keydown listeners needed -->
+  <RouterLink
+    :to="detailLinkTarget"
     class="weather-card"
     :style="cardStyle"
-    tabindex="0"
-    role="button"
     :aria-label="`View weather details for ${city}`"
-    @click="openWeatherDetail"
-    @keydown.enter="openWeatherDetail"
-    @keydown.space.prevent="openWeatherDetail"
   >
     <div class="weather-card__top">
       <div class="weather-card__location">
@@ -173,5 +168,5 @@ function openWeatherDetail() {
       </p>
 
     </div>
-  </article>
+  </RouterLink>
 </template>
