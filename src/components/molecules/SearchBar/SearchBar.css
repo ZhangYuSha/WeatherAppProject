@@ -111,3 +111,14 @@
 
   color: #777;
 }
+
+@media (max-width: 600px) {
+  .search-bar__icon {
+    font-size: 20px;
+    margin-left: 12px;
+  }
+
+  .search-bar__suggestion-text {
+    font-size: 15px;
+  }
+}
