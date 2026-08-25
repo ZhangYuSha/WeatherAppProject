@@ -97,7 +97,7 @@ npm run preview   # serve the production build locally
 - **"MyLocation" handling.** The user's geolocated position is tracked separately from explicitly saved cities so it can be dismissed ("deleted") without discarding the underlying coordinates — re-adding the same location simply restores it rather than creating a duplicate saved entry. Two coordinates are treated as the same place using an approximate ~1km tolerance.
 - **Typed API layer.** `WeatherApi` and `CountryApi` centralize all `fetch` calls and expose typed interfaces (`WeatherData`, `HourlyForecastData`, `DailyForecastData`, `DetailedForecastItem`, `LocationSuggestion`, `Country`) so components never handle raw API shapes directly.
 - **Form validation.** `AccountPage` validates each field independently (required, max length, email pattern, phone pattern) so every invalid field surfaces its own message rather than short-circuiting on the first error, with `aria-invalid` and `role="alert"` wired up for accessibility.
-- **Navigation-based data passing.** Forecast detail data is passed via Vue Router's `state` option (`history.state`) rather than re-fetching or duplicating it in global state, since it's only needed for the lifetime of that single view.
+- **Navigation-based data passing.** Forecast detail selection (`kind`, `index`) is passed via route query params, with the detail page refetching the forecast and resolving the specific entry — this keeps direct links and page refreshes working, at the cost of an extra network call.
 
 ## Web API Integration
 
@@ -110,11 +110,7 @@ npm run preview   # serve the production build locally
 ```bash
 npm run test
 ```
-
-<!-- Describe your actual test setup here, e.g.:
-- Unit tests: Vitest + Vue Test Utils for composables and components
-- Coverage: `npm run test:coverage`
--->
+Unit tests are written with [Vitest](https://vitest.dev/). Coverage for `getLocationLabel` in `WeatherApi.ts` is included; other services and composables are noted under Possible Improvements.
 
 ## Commit Convention
 
@@ -134,6 +130,6 @@ Common types: `feat`, `fix`, `refactor`, `style`, `docs`, `test`, `chore`.
 ## Possible Improvements
 
 - Extract global state into Pinia if the app's shared-state surface grows
-- Add unit tests around `useSavedCities`'s location-matching logic
+- Expand unit test coverage beyond `getLocationLabel` — particularly `useSavedCities`'s location-matching logic and forecast formatting in `WeatherApi.ts`
 - Cache weather responses to reduce redundant API calls on refresh
 - Add a service worker for basic offline support
