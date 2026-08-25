@@ -26,3 +26,9 @@
   font-size: var(--pwbb-title-size, 26px);
   font-weight: 700;
 }
+
+@media (max-width: 600px) {
+  .page-with-back-button__title {
+    font-size: 20px;
+  }
+}
