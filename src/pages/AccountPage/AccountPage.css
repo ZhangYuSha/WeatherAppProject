@@ -2,6 +2,7 @@
   min-height: 100vh;
   padding: 32px;
   box-sizing: border-box;
+  background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
 }
 
 /* Header */
@@ -183,7 +184,7 @@
   padding: 12px 24px;
   border: none;
   border-radius: 10px;
-  background: #222;
+  background: #2E3A5A;
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -233,7 +234,7 @@
 }
 
 .account-page__country {
-  width: 110px;
+  width: 130px;
   min-width: 110px;
   height: 50px;
   padding: 0 8px;
@@ -262,6 +263,60 @@
   margin: 8px 0 0;
   font-size: 14px;
   color: #c0392b;
+}
+
+.account-page__picture-wrapper {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin-bottom: 16px;
+}
+
+.account-page__picture-wrapper .account-page__profile-picture {
+  margin-bottom: 0;
+}
+
+.account-page__edit-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #8e8b8b;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.account-page__edit-badge:hover {
+  opacity: 0.8;
+}
+
+.account-page__edit-badge-icon {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 600px) {
+  .account-page__picture-wrapper {
+    width: 90px;
+    height: 90px;
+  }
+
+  .account-page__edit-badge {
+    width: 28px;
+    height: 28px;
+  }
+
+  .account-page__edit-badge-icon {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 @media (max-width: 600px) {

@@ -375,7 +375,7 @@ onMounted(async () => {
           type="button"
           @click="editProfile"
         >
-          Edit
+          EDIT
         </button>
 
         <button
@@ -384,7 +384,7 @@ onMounted(async () => {
           type="button"
           @click="submitProfile"
         >
-          Submit
+          SUBMIT
         </button>
       </div>
 
