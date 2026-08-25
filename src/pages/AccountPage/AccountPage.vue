@@ -11,6 +11,7 @@ import { getCountries } from '../../services/CountryApi'
 import type { Country } from '../../services/CountryApi'
 
 import { useProfile } from '../../composables/useProfile'
+import editButton from '../../assets/Account/edit-button.svg'
 
 const isEditing = ref(false)
 
@@ -181,11 +182,27 @@ onMounted(async () => {
   >
     <!-- Profile summary -->
     <section class="account-page__profile">
-      <img
-        class="account-page__profile-picture"
-        :src="profilePicture"
-        alt="Profile picture"
-      />
+      <div class="account-page__picture-wrapper">
+        <img
+          class="account-page__profile-picture"
+          :src="profilePicture"
+          alt="Profile picture"
+        />
+
+        <button
+          v-if="isEditing"
+          class="account-page__edit-badge"
+          type="button"
+          aria-label="Edit profile picture"
+          @click="editProfile"
+        >
+          <img
+            class="account-page__edit-badge-icon"
+            :src="editButton"
+            alt=""
+          />
+        </button>
+      </div>
 
       <h2 class="account-page__name">
         {{ fullName }}
