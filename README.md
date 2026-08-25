@@ -34,8 +34,10 @@ src/
 ├── assets/                  # Static assets (icons, weather background images)
 ├── components/
 │   ├── atoms/                # BaseInput, etc. — smallest reusable building blocks
-│   ├── molecules/             # SearchBar — atoms composed together
-│   ├── organisms/             # WeatherCard — self-contained, reusable UI sections
+│   ├── molecules/             # SearchBar 
+— atoms composed together
+│   ├── organisms/             # WeatherCard 
+— self-contained, reusable UI sections
 │   └── templates/             # PageWithBackButton — page-level layout skeletons
 ├── composables/
 │   └── useSavedCities.ts      # Shared reactive state: saved cities, current location
@@ -71,11 +73,30 @@ npm install
 
 ### Environment variables
 
-Create a `.env` file in the project root:
+The app reads its OpenWeatherMap key from a Vite environment variable at build/run time.
+
+**File location:** create a file named `.env` in the **project root** — the same directory as `package.json` and `vite.config.ts`, not inside `src/`. Vite only picks up env files from the root by default.
+
+```
+WeatherAppProject/
+├── src/
+├── package.json
+├── vite.config.ts
+└── .env          ← create it here
+```
+
+Contents:
 
 ```
 VITE_OPENWEATHER_API_KEY=<your-api-key>
 ```
+
+Notes:
+
+- The `VITE_` prefix is required — Vite only exposes env variables to client-side code if they're prefixed with `VITE_`; anything without it is invisible to the app.
+- `.env` is listed in `.gitignore` and is **not** committed to the repo. Each developer/reviewer needs to create their own copy locally using the snippet above.
+- A restart of `npm run dev` is required after creating or editing `.env` — Vite reads it once at startup and won't pick up changes on the fly.
+- If you use a real REST Countries–style endpoint that also requires a key, add it to the same `.env` file the same way (e.g. `VITE_COUNTRY_API_KEY=...`) and reference it in `CountryApi.ts`; the public [restcountries.com](https://restcountries.com) API does not require one.
 
 ### Run locally
 
@@ -110,7 +131,8 @@ npm run preview   # serve the production build locally
 ```bash
 npm run test
 ```
-Unit tests are written with [Vitest](https://vitest.dev/). Coverage for `getLocationLabel` in `WeatherApi.ts` is included; other services and composables are noted under Possible Improvements.
+
+Unit tests are written with [Vitest](https://vitest.dev/). Current coverage includes `getLocationLabel` in `WeatherApi.ts`; broader coverage of services and composables is tracked under [Possible Improvements](#possible-improvements).
 
 ## Commit Convention
 
